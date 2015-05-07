@@ -1,5 +1,5 @@
 <?php
-  require 'Slim/Slim.php';
+  require 'lib/Slim/Slim.php';
 
   date_default_timezone_set('Africa/Addis_Ababa');
   \Slim\Slim::registerAutoloader();
