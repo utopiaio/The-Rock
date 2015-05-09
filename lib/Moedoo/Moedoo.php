@@ -28,7 +28,7 @@
       $columns = implode(", ", \Config\TABLES[$table]["RETURNING"]);
       $params = $id === -1 ? [] : [$id];
 
-      $query = "SELECT {$columns} FROM {$table}";
+      $query = "SELECT {$columns} FROM ". \Config\TABLE_PREFIX ."{$table}";
       $query .= $id === -1 ? "" : " WHERE ". \Config\TABLES[$table]["pk"] ."=$1";
       $query .= " ORDER BY ". \Config\TABLES[$table]["pk"] ." DESC;";
 
@@ -80,7 +80,7 @@
       $holders = implode(", ", $holders);
       $returning = implode(", ", \Config\TABLES[$table]["RETURNING"]);
 
-      $query = "INSERT INTO {$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
+      $query = "INSERT INTO ". \Config\TABLE_PREFIX ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
 
       $result = pg_query_params($query, $params);
       \Util\JSON(pg_fetch_all($result)[0], 202);
@@ -109,7 +109,7 @@
       $set = implode(", ", $set);
       array_push($params, $id);
 
-      $query = "UPDATE {$table} SET {$set} WHERE ". \Config\TABLES[$table]["pk"] ."=\${$count} RETURNING {$columns};";
+      $query = "UPDATE ". \Config\TABLE_PREFIX ."{$table} SET {$set} WHERE ". \Config\TABLES[$table]["pk"] ."=\${$count} RETURNING {$columns};";
 
       $result = pg_query_params($query, $params);
 
@@ -143,7 +143,7 @@
       $params = [$id];
       $columns = implode(", ", \Config\TABLES[$table]["RETURNING"]);
 
-      $query = "DELETE FROM {$table} WHERE ". \Config\TABLES[$table]["pk"] ."=$1 RETURNING {$columns};";
+      $query = "DELETE FROM ". \Config\TABLE_PREFIX ."{$table} WHERE ". \Config\TABLES[$table]["pk"] ."=$1 RETURNING {$columns};";
 
       $result = pg_query_params($query, $params);
 
