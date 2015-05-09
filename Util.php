@@ -53,16 +53,29 @@
 
 
     /**
-     * given a message it'll return a JSON response
-     * then halt the app
+     * "destroys" the app first by calling `Util::clear_session()`
+     * then sends one LAST message before halting
      *
      * @param string $message - message to be sent back with `error` property
      */
     public static function halt($message, $status = 403) {
+      Util::clear_session();
       $app = \Slim\Slim::getInstance();
       $response = $app->response;
       $response->headers->set('Content-Type', 'application/json');
       $app->halt($status, json_encode(["error" => $message]));
+    }
+
+
+
+    /**
+     * clears $_SESSION
+     */
+    public static function clear_session() {
+      $app = \Slim\Slim::getInstance();
+      $app->deleteCookie(\Config\COOKIE_NAME);
+      $_SESSION = [];
+      session_destroy();
     }
   }
 ?>
