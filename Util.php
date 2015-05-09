@@ -33,5 +33,21 @@
       $response->headers->set('Content-Type', 'application/json');
       echo json_encode($data);
     }
+
+
+
+    /**
+     * given a string it'll return the hashed form
+     *
+     * @param string $string
+     * @return string
+     */
+    public static function hash($string) {
+      $hash = hash_init(\Config\HASH);
+      hash_update($hash, $string);
+      hash_update($hash, \Config\SALT);
+
+      return hash_final($hash);
+    }
   }
 ?>
