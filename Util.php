@@ -53,6 +53,18 @@
 
 
     /**
+     * checks a table against `config` file and if table doesn't exist
+     * execution will be halted --- session will not be affect
+     */
+    public static function checkTable($table) {
+      if(!array_key_exists($table, \Config\TABLES)) {
+        Util::stop(["error" => "requested URL was not found"]);
+      }
+    }
+
+
+
+    /**
      * "destroys" the app first by calling `Util::clear_session()`
      * then sends one LAST message before halting
      *
@@ -60,6 +72,20 @@
      */
     public static function halt($message, $status = 403) {
       Util::clear_session();
+      $app = \Slim\Slim::getInstance();
+      $response = $app->response;
+      $response->headers->set('Content-Type', 'application/json;charset=utf-8');
+      $app->halt($status, json_encode(["error" => $message]));
+    }
+
+
+
+   /**
+     * halts execution but does NOT clear the session
+     *
+     * @param string $message - message to be sent back with `error` property
+     */
+    public static function stop($message, $status = 404) {
       $app = \Slim\Slim::getInstance();
       $response = $app->response;
       $response->headers->set('Content-Type', 'application/json;charset=utf-8');
