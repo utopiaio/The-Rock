@@ -30,7 +30,7 @@
       $app = \Slim\Slim::getInstance();
       $response = $app->response;
       $response->setStatus($status);
-      $response->headers->set('Content-Type', 'application/json');
+      $response->headers->set('Content-Type', 'application/json;charset=utf-8');
       echo json_encode($data);
     }
 
@@ -62,7 +62,7 @@
       Util::clear_session();
       $app = \Slim\Slim::getInstance();
       $response = $app->response;
-      $response->headers->set('Content-Type', 'application/json');
+      $response->headers->set('Content-Type', 'application/json;charset=utf-8');
       $app->halt($status, json_encode(["error" => $message]));
     }
 

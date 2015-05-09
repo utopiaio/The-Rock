@@ -154,7 +154,7 @@
 
       // everything went as expected
       else if(pg_affected_rows($result) === 1) {
-        Util::JSON(pg_fetch_all($result)[0], 202);
+        Util::JSON(pg_fetch_all($result)[0], 200);
       }
 
       // something horrible has happened
