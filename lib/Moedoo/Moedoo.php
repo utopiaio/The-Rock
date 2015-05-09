@@ -36,22 +36,22 @@
 
       // table is empty, empty array will be returned
       if(pg_affected_rows($result) === 0 && $id === -1) {
-        \Util\JSON([], 200);
+        Util::JSON([], 200);
       }
 
       // requested object is not found
       else if(pg_affected_rows($result) === 0 && $id !== -1) {
-        \Util\JSON(["error" => "object not found"], 404);
+        Util::JSON(["error" => "object not found"], 404);
       }
 
       // single row requested found
       else if(pg_affected_rows($result) === 1 && $id !== -1) {
-        \Util\JSON(pg_fetch_all($result)[0], 200);
+        Util::JSON(pg_fetch_all($result)[0], 200);
       }
 
       // all is good
       else {
-        \Util\JSON(pg_fetch_all($result), 200);
+        Util::JSON(pg_fetch_all($result), 200);
       }
     }
 
@@ -83,7 +83,7 @@
       $query = "INSERT INTO ". \Config\TABLE_PREFIX ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
 
       $result = pg_query_params($query, $params);
-      \Util\JSON(pg_fetch_all($result)[0], 202);
+      Util::JSON(pg_fetch_all($result)[0], 202);
     }
 
 
@@ -115,17 +115,17 @@
 
       // nothing was affected
       if(pg_affected_rows($result) === 0) {
-        \Util\JSON(["error" => "object not found"], 404);
+        Util::JSON(["error" => "object not found"], 404);
       }
 
       // everything went as expected
       else if(pg_affected_rows($result) === 1) {
-        \Util\JSON(pg_fetch_all($result)[0], 202);
+        Util::JSON(pg_fetch_all($result)[0], 202);
       }
 
       // something horrible has happened
       else {
-        \Util\JSON(["error" => "ouch, that hurt"], 500);
+        Util::JSON(["error" => "ouch, that hurt"], 500);
       }
     }
 
@@ -149,17 +149,17 @@
 
       // object requested to be deleted doesn't exist in table
       if(pg_affected_rows($result) === 0) {
-        \Util\JSON(["error" => "object not found"], 404);
+        Util::JSON(["error" => "object not found"], 404);
       }
 
       // everything went as expected
       else if(pg_affected_rows($result) === 1) {
-        \Util\JSON(pg_fetch_all($result)[0], 202);
+        Util::JSON(pg_fetch_all($result)[0], 202);
       }
 
       // something horrible has happened
       else {
-        \Util\JSON(["error" => "ouch, that hurt"], 500);
+        Util::JSON(["error" => "ouch, that hurt"], 500);
       }
     }
   }
