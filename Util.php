@@ -49,5 +49,20 @@
 
       return hash_final($hash);
     }
+
+
+
+    /**
+     * given a message it'll return a JSON response
+     * then halt the app
+     *
+     * @param string $message - message to be sent back with `error` property
+     */
+    public static function halt($message, $status = 403) {
+      $app = \Slim\Slim::getInstance();
+      $response = $app->response;
+      $response->headers->set('Content-Type', 'application/json');
+      $app->halt($status, json_encode(["error" => $message]));
+    }
   }
 ?>
