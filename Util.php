@@ -57,8 +57,8 @@
      * execution will be halted --- session will not be affect
      */
     public static function checkTable($table) {
-      if(!array_key_exists($table, \Config\TABLES)) {
-        Util::stop(["error" => "requested URL was not found"]);
+      if(array_key_exists($table, \Config\TABLES) === false) {
+        Util::stop("requested URL was not found");
       }
     }
 
