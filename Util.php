@@ -53,12 +53,25 @@
 
 
     /**
-     * checks a table against `config` file and if table doesn't exist
-     * execution will be halted --- session will not be affect
+     * runs security check on CRUD mapping functions
+     * 1: checks weather or not table exists in `config` file
+     * 2: checks if $method + $table is restricted calls authentication
+     * 3: checks if $method + $table is forbidden execution is stopped
+     *
+     * @param string $method
+     * @param string $table
      */
-    public static function checkTable($table) {
+    public static function check($method, $table) {
       if(array_key_exists($table, \Config\TABLES) === false) {
         Util::stop("requested URL was not found");
+      }
+
+      if(in_array($table, \Config\RESTRICTED_REQUESTS[$method]) === true) {
+        Rock::authenticated();
+      }
+
+      if(in_array($table, \Config\FORBIDDEN_REQUESTS[$method]) === true) {
+        Util::stop("request is forbidden", 403);
       }
     }
 
