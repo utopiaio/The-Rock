@@ -31,7 +31,6 @@
       $query = "SELECT {$columns} FROM ". \Config\TABLE_PREFIX ."{$table}";
       $query .= $id === -1 ? "" : " WHERE ". \Config\TABLES[$table]["pk"] ."=$1";
       $query .= " ORDER BY ". \Config\TABLES[$table]["pk"] ." DESC;";
-
       $result = pg_query_params($query, $params);
 
       // table is empty, empty array will be returned
@@ -46,12 +45,32 @@
 
       // single row requested found
       else if(pg_affected_rows($result) === 1 && $id !== -1) {
-        Util::JSON(pg_fetch_all($result)[0], 200);
+        $row = pg_fetch_all($result)[0];
+
+        // JSON string -> array...
+        foreach($row as $column => $value) {
+          if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+            $row[$column] = json_decode($value);
+          }
+        }
+
+        Util::JSON($row, 200);
       }
 
       // all is good
       else {
-        Util::JSON(pg_fetch_all($result), 200);
+        $rows = pg_fetch_all($result);
+
+        // JSON string -> array...
+        foreach($rows as $index => $row) {
+          foreach($row as $column => $value) {
+            if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+              $rows[$index][$column] = json_decode($value);
+            }
+          }
+        }
+
+        Util::JSON($rows, 200);
       }
     }
 
@@ -69,8 +88,13 @@
       $holders = []; // ${$index}
       $params = [];
 
-      foreach($data as $key => $value) {
-        array_push($columns, $key);
+      foreach($data as $column => $value) {
+        // array -> string...
+        if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+          $value = json_encode($value);
+        }
+
+        array_push($columns, $column);
         array_push($holders, "\${$count}");
         array_push($params, $value);
         $count++;
@@ -81,9 +105,17 @@
       $returning = implode(", ", \Config\TABLES[$table]["RETURNING"]);
 
       $query = "INSERT INTO ". \Config\TABLE_PREFIX ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
-
       $result = pg_query_params($query, $params);
-      Util::JSON(pg_fetch_all($result)[0], 202);
+      $row = pg_fetch_all($result)[0];
+
+      // JSON string -> array...
+      foreach($row as $column => $value) {
+        if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+          $row[$column] = json_decode($value);
+        }
+      }
+
+      Util::JSON($row, 202);
     }
 
 
@@ -100,8 +132,13 @@
       $params = [];
       $columns = implode(", ", \Config\TABLES[$table]["RETURNING"]);
 
-      foreach($newData as $key => $value) {
-        array_push($set, $key."=\${$count}");
+      foreach($newData as $column => $value) {
+        // array -> string...
+        if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+          $value = json_encode($value);
+        }
+
+        array_push($set, $column."=\${$count}");
         array_push($params, $value);
         $count++;
       }
@@ -110,7 +147,6 @@
       array_push($params, $id);
 
       $query = "UPDATE ". \Config\TABLE_PREFIX ."{$table} SET {$set} WHERE ". \Config\TABLES[$table]["pk"] ."=\${$count} RETURNING {$columns};";
-
       $result = pg_query_params($query, $params);
 
       // nothing was affected
@@ -120,7 +156,16 @@
 
       // everything went as expected
       else if(pg_affected_rows($result) === 1) {
-        Util::JSON(pg_fetch_all($result)[0], 202);
+        $row = pg_fetch_all($result)[0];
+
+        // JSON string -> array...
+        foreach($row as $column => $value) {
+          if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+            $row[$column] = json_decode($value);
+          }
+        }
+
+        Util::JSON($row, 202);
       }
 
       // something horrible has happened
@@ -144,7 +189,6 @@
       $columns = implode(", ", \Config\TABLES[$table]["RETURNING"]);
 
       $query = "DELETE FROM ". \Config\TABLE_PREFIX ."{$table} WHERE ". \Config\TABLES[$table]["pk"] ."=$1 RETURNING {$columns};";
-
       $result = pg_query_params($query, $params);
 
       // object requested to be deleted doesn't exist in table
@@ -154,7 +198,16 @@
 
       // everything went as expected
       else if(pg_affected_rows($result) === 1) {
-        Util::JSON(pg_fetch_all($result)[0], 200);
+        $row = pg_fetch_all($result)[0];
+
+        // JSON string -> array...
+        foreach($row as $column => $value) {
+          if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+            $row[$column] = json_decode($value);
+          }
+        }
+
+        Util::JSON($row, 200);
       }
 
       // something horrible has happened
