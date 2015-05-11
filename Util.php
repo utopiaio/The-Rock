@@ -53,31 +53,6 @@
 
 
     /**
-     * runs security check on CRUD mapping functions
-     * 1: checks weather or not table exists in `config` file
-     * 2: checks if $method + $table is restricted calls authentication
-     * 3: checks if $method + $table is forbidden execution is stopped
-     *
-     * @param string $method
-     * @param string $table
-     */
-    public static function check($method, $table) {
-      if(array_key_exists($table, \Config\TABLES) === false) {
-        Util::stop("requested URL was not found");
-      }
-
-      if(in_array($table, \Config\RESTRICTED_REQUESTS[$method]) === true) {
-        Rock::authenticated();
-      }
-
-      if(in_array($table, \Config\FORBIDDEN_REQUESTS[$method]) === true) {
-        Util::stop("request is forbidden", 403);
-      }
-    }
-
-
-
-    /**
      * "destroys" the app first by calling `Util::clear_session()`
      * then sends one LAST message before halting
      *
