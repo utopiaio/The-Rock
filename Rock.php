@@ -36,7 +36,7 @@
      */
     public static function login($username, $password) {
       $password = Util::hash($password);
-      $params = [$username, $password, 'ADMINISTRATOR'];
+      $params = [$username, $password, "ADMINISTRATOR"];
       $query = "SELECT ". implode(", ", \Config\TABLES["users"]["RETURNING"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE user_username=$1 AND user_password=$2 AND user_type=$3;";
       $result = pg_query_params($query, $params);
 
@@ -82,7 +82,7 @@
         Util::clear_session();
         $app = \Slim\Slim::getInstance();
         $response = $app->response;
-        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set("Content-Type", "application/json");
         $app->halt(202, json_encode(["success" => "thank you for spending quality time with the site today"]));
       }
 
