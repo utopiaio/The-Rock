@@ -71,6 +71,8 @@
     })->conditions(["id" => "\d+"]);
   });
 
+  // this maps ANY OPTIONS request sent and checks the origin against
+  // `config` and returns the appropriate header
   $app->options("/(:path+)", function() use($app) {
     $response = $app->response;
     $origin = $app->request->headers["Origin"];
@@ -78,23 +80,23 @@
 
     if(in_array("*", \Config\CORS_WHITE_LIST)  === true) {
       $response->headers->set("Access-Control-Allow-Origin", "*");
-      $response->headers->set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-      $response->headers->set("Access-Control-Allow-Headers", "accept, content-type");
+      $response->headers->set("Access-Control-Allow-Methods", implode(", ", \Config\CORS_METHODS));
+      $response->headers->set("Access-Control-Allow-Headers", implode(", ", \Config\CORS_HEADERS));
       $response->headers->set("Access-Control-Allow-Credentials", "true");
-      $response->headers->set("Access-Control-Max-Age", "86400");
+      $response->headers->set("Access-Control-Max-Age", \Config\CORS_MAX_AGE);
       $response->setStatus(202);
     }
 
     else if(in_array($origin_stripped, \Config\CORS_WHITE_LIST) === true) {
       $response->headers->set("Access-Control-Allow-Origin", "{$origin}");
-      $response->headers->set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-      $response->headers->set("Access-Control-Allow-Headers", "accept, content-type");
+      $response->headers->set("Access-Control-Allow-Methods", implode(", ", \Config\CORS_METHODS));
+      $response->headers->set("Access-Control-Allow-Headers", implode(", ", \Config\CORS_HEADERS));
       $response->headers->set("Access-Control-Allow-Credentials", "true");
-      $response->headers->set("Access-Control-Max-Age", "86400");
+      $response->headers->set("Access-Control-Max-Age", \Config\CORS_MAX_AGE);
       $response->setStatus(202);
     }
 
-    else{
+    else {
       Util::JSON(["error" => "CORS forbidden, please contact system administrator"], 403);
     }
   });
