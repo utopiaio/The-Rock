@@ -83,7 +83,7 @@
         $app = \Slim\Slim::getInstance();
         $response = $app->response;
         $response->headers->set('Content-Type', 'application/json');
-        $app->halt(202, json_encode(["success" => "thank you, come again"]));
+        $app->halt(202, json_encode(["success" => "thank you for spending quality time with the site today"]));
       }
 
       // there's no session to clear
