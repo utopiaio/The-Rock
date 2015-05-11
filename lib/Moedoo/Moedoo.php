@@ -47,10 +47,15 @@
       else if(pg_affected_rows($result) === 1 && $id !== -1) {
         $row = pg_fetch_all($result)[0];
 
-        // JSON string -> array...
         foreach($row as $column => $value) {
+          // JSON string -> array...
           if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
             $row[$column] = json_decode($value);
+          }
+
+          // integer string -> integer...
+          if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
+            $row[$column] = (int)$value;
           }
         }
 
@@ -61,11 +66,16 @@
       else {
         $rows = pg_fetch_all($result);
 
-        // JSON string -> array...
         foreach($rows as $index => $row) {
           foreach($row as $column => $value) {
+            // JSON string -> array...
             if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
               $rows[$index][$column] = json_decode($value);
+            }
+
+            // integer string -> integer...
+            if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
+              $rows[$index][$column] = (int)$value;
             }
           }
         }
@@ -108,10 +118,15 @@
       $result = pg_query_params($query, $params);
       $row = pg_fetch_all($result)[0];
 
-      // JSON string -> array...
       foreach($row as $column => $value) {
+        // JSON string -> array...
         if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
           $row[$column] = json_decode($value);
+        }
+
+        // integer string -> integer...
+        if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
+          $row[$column] = (int)$value;
         }
       }
 
@@ -158,10 +173,15 @@
       else if(pg_affected_rows($result) === 1) {
         $row = pg_fetch_all($result)[0];
 
-        // JSON string -> array...
         foreach($row as $column => $value) {
+          // JSON string -> array...
           if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
             $row[$column] = json_decode($value);
+          }
+
+          // integer string -> integer...
+          if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
+            $row[$column] = (int)$value;
           }
         }
 
@@ -200,9 +220,14 @@
       else if(pg_affected_rows($result) === 1) {
         $row = pg_fetch_all($result)[0];
 
-        // JSON string -> array...
         foreach($row as $column => $value) {
+          // JSON string -> array...
           if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+            $row[$column] = json_decode($value);
+          }
+
+          // integer string -> integer...
+          if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
             $row[$column] = json_decode($value);
           }
         }
