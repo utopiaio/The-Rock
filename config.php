@@ -34,6 +34,9 @@
 
   // white-list for CORS
   const CORS_WHITE_LIST = ["*", "rock.io", "foo.com"];
+  const CORS_METHODS = ["GET", "POST", "PUT", "DELETE"];
+  const CORS_HEADERS = ["accept", "content-type"];
+  const CORS_MAX_AGE = "86400";
 
   // requests that require authenticated session
   const RESTRICTED_REQUESTS = [
