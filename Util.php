@@ -21,6 +21,23 @@
 
 
     /**
+     * given table and a payload, makes sure the data is in accordance with
+     * `config` file --- if anything "suspicious" is detected - execution is stopped
+     *
+     * @param string $table
+     * @param payload
+     */
+    public static function validatePayload($table, $payload) {
+      foreach($payload as $key => $value) {
+        if(in_array($key, \Config\TABLES[$table]["columns"]) === false) {
+          Util::stop("bad request, check the payload and try again", 400);
+        }
+      }
+    }
+
+
+
+    /**
      * given an array and status code it'll return a JSON response
      *
      * @param array $data
