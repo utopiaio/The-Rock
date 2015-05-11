@@ -26,7 +26,12 @@
   // login
   $app->post("/login", function() use($app) {
     $request = $app->request;
-    $body = json_decode($request->getBody());
+    $body = Util::to_array(json_decode($request->getBody()));
+
+    if(!array_key_exists("username", $body) || !array_key_exists("password", $body)) {
+      Util::stop("bad request, check the payload and try again", 400);
+    }
+
     Rock::login($body["username"], $body["password"]);
   });
 
@@ -38,34 +43,63 @@
   // generic CRUD mapper
   $app->group("/:table", function() use($app) {
     $app->get("(/:id)", function($table, $id = -1) use($app) {
-      Util::check("GET", $table);
+      Rock::check("GET", $table);
 
       $id === -1 ? Moedoo::select($table) : Moedoo::select($table, $id);
     })->conditions(["id" => "\d+"]);
 
-    $app->post("", function($table) {
-      Util::check("POST", $table);
+    $app->post("", function($table) use($app) {
+      Rock::check("POST", $table);
 
-      $body = json_decode($request->getBody());
+      $request = $app->request;
+      $body = Util::to_array(json_decode($request->getBody()));
       Moedoo::insert($table, $body);
     });
 
-    $app->put("/:id", function($table, $id) {
-      Util::check("PUT", $table);
+    $app->put("/:id", function($table, $id) use($app) {
+      Rock::check("PUT", $table);
 
       $request = $app->request;
-      $body = json_decode($request->getBody());
-      Moedoo::update($table, $body);
+      $body = Util::to_array(json_decode($request->getBody()));
+      Moedoo::update($table, $body, $id);
     })->conditions(["id" => "\d+"]);
 
-    $app->delete("/:id", function($table, $id) {
-      Util::check("DELETE", $table);
+    $app->delete("/:id", function($table, $id) use($app) {
+      Rock::check("DELETE", $table);
 
-      $Moedoo::delete($table, $id);
+      Moedoo::delete($table, $id);
     })->conditions(["id" => "\d+"]);
   });
 
-  $app->notFound(function() use($app) {
+  $app->options("/(:path+)", function() use($app) {
+    $response = $app->response;
+    $origin = $app->request->headers["Origin"];
+    $origin_stripped = preg_replace("/http:\/\/|www\./", "", $origin);
+
+    if(in_array("*", \Config\CORS_WHITE_LIST)  === true) {
+      $response->headers->set("Access-Control-Allow-Origin", "*");
+      $response->headers->set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+      $response->headers->set("Access-Control-Allow-Headers", "accept, content-type");
+      $response->headers->set("Access-Control-Allow-Credentials", "true");
+      $response->headers->set("Access-Control-Max-Age", "86400");
+      $response->setStatus(202);
+    }
+
+    else if(in_array($origin_stripped, \Config\CORS_WHITE_LIST) === true) {
+      $response->headers->set("Access-Control-Allow-Origin", "{$origin}");
+      $response->headers->set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+      $response->headers->set("Access-Control-Allow-Headers", "accept, content-type");
+      $response->headers->set("Access-Control-Allow-Credentials", "true");
+      $response->headers->set("Access-Control-Max-Age", "86400");
+      $response->setStatus(202);
+    }
+
+    else{
+      Util::JSON(["error" => "CORS forbidden, please contact system administrator"], 403);
+    }
+  });
+
+  $app->notFound(function() {
     Util::JSON(["error" => "requested URL was not found"], 404);
   });
 
