@@ -40,10 +40,10 @@
 
   // requests that require authenticated session
   const RESTRICTED_REQUESTS = [
-    "GET"     => ["users", "test"],
-    "POST"    => ["media", "users"],
-    "PUT"     => ["about", "background", "contact", "logo", "media", "social", "users"],
-    "DELETE"  => ["media", "users"]
+    "GET"     => ["users"],
+    "POST"    => ["users"],
+    "PUT"     => ["about", "background", "contact", "logo", "social", "users"],
+    "DELETE"  => ["users"]
   ];
 
   // request that are NOT allowed --- period
@@ -85,14 +85,6 @@
       "columns"   => ["id", "data"],
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
-      "int"       => ["id"],
-      "bool"      => []
-    ],
-    "test"        => [
-      "pk"        => "id",
-      "columns"   => ["id", "name", "json"],
-      "RETURNING" => ["id", "name", "json"],
-      "JSON"      => ["json"],
       "int"       => ["id"],
       "bool"      => []
     ],
