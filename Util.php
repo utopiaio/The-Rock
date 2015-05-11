@@ -28,6 +28,10 @@
      * @param payload
      */
     public static function validatePayload($table, $payload) {
+      if(is_null($payload) === true) {
+        Util::stop("bad request, check the payload and try again", 400);
+      }
+
       foreach($payload as $key => $value) {
         if(in_array($key, \Config\TABLES[$table]["columns"]) === false) {
           Util::stop("bad request, check the payload and try again", 400);
