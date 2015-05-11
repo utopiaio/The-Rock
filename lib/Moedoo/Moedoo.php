@@ -57,6 +57,11 @@
           if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
             $row[$column] = (int)$value;
           }
+
+          // bool string -> bool...
+          if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
+            $row[$column] = $value === "t" ? true : false;
+          }
         }
 
         Util::JSON($row, 200);
@@ -76,6 +81,11 @@
             // integer string -> integer...
             if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
               $rows[$index][$column] = (int)$value;
+            }
+
+            // bool string -> bool...
+            if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
+              $rows[$index][$column] = $value === "t" ? true : false;
             }
           }
         }
@@ -129,6 +139,11 @@
         // integer string -> integer...
         if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
           $row[$column] = (int)$value;
+        }
+
+        // bool string -> bool...
+        if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
+          $row[$column] = $value === "t" ? true : false;
         }
       }
 
@@ -187,6 +202,11 @@
           if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
             $row[$column] = (int)$value;
           }
+
+          // bool string -> bool...
+          if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
+            $row[$column] = $value === "t" ? true : false;
+          }
         }
 
         Util::JSON($row, 202);
@@ -232,7 +252,12 @@
 
           // integer string -> integer...
           if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
-            $row[$column] = json_decode($value);
+            $row[$column] = (int)$value;
+          }
+
+          // bool string -> bool...
+          if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
+            $row[$column] = $value === "t" ? true : false;
           }
         }
 

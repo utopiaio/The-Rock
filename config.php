@@ -61,56 +61,64 @@
       "columns"   => ["id", "data"],
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
-      "int"       => ["id"]
+      "int"       => ["id"],
+      "bool"      => []
     ],
     "background"  => [
       "pk"        => "id",
       "columns"   => ["id", "data"],
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
-      "int"       => ["id"]
+      "int"       => ["id"],
+      "bool"      => []
     ],
     "contact"     => [
       "pk"        => "id",
       "columns"   => ["id", "data"],
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
-      "int"       => ["id"]
+      "int"       => ["id"],
+      "bool"      => []
     ],
     "logo"        => [
       "pk"        => "id",
       "columns"   => ["id", "data"],
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
-      "int"       => ["id"]
+      "int"       => ["id"],
+      "bool"      => []
     ],
     "test"        => [
       "pk"        => "id",
       "columns"   => ["id", "name", "json"],
       "RETURNING" => ["id", "name", "json"],
       "JSON"      => ["json"],
-      "int"       => ["id"]
+      "int"       => ["id"],
+      "bool"      => []
     ],
-    "media"       => [
-      "pk"        => "id",
-      "columns"   => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
-      "RETURNING" => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
-      "JSON"      => [],
-      "int"       => ["id", "size"]
-    ],
+    // "media"       => [
+    //   "pk"        => "id",
+    //   "columns"   => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
+    //   "RETURNING" => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
+    //   "JSON"      => [],
+    //   "int"       => ["id", "size"],
+    //   "bool"      => []
+    // ],
     "social"      => [
       "pk"        => "id",
       "columns"   => ["id", "data"],
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
-      "int"       => ["id"]
+      "int"       => ["id"],
+      "bool"      => []
     ],
     "users"       => [
       "pk"        => "user_id",
       "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_type", "user_status"],
       "RETURNING" => ["user_id", "user_full_name", "user_username", "user_type", "user_status"],
       "JSON"      => [],
-      "int"       => ["user_id"]
+      "int"       => ["user_id"],
+      "bool"      => ["user_status"]
     ]
   ];
 ?>
