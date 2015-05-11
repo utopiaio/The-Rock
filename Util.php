@@ -21,6 +21,23 @@
 
 
     /**
+     * given a Std Object returns an associative array representation of the object
+     * @param object $object
+     *
+     */
+    public static function to_array($object) {
+      $array = [];
+
+      foreach($object as $key => $value) {
+        $array[$key] = $value;
+      }
+
+      return $array;
+    }
+
+
+
+    /**
      * given table and a payload, makes sure the data is in accordance with
      * `config` file --- if anything "suspicious" is detected - execution is stopped
      *
