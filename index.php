@@ -1,7 +1,7 @@
 <?php
-  require "config.php";
   require "lib/Slim/Slim.php";
-  require "lib/Moedoo/Moedoo.php";
+  require "config.php";
+  require "Moedoo.php";
   require "Util.php";
   require "Rock.php";
 
