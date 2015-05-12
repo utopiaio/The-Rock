@@ -4,9 +4,9 @@
      * checks session and authenticates or halts execution
      */
     public static function authenticated() {
-      if(isset($_SESSION[\Config\TABLES["users"]["pk"]]) && isset($_SESSION["user_type"])) {
-        $params = [$_SESSION[\Config\TABLES["users"]["pk"]], $_SESSION["user_type"]];
-        $query = "SELECT ". implode(", ", \Config\TABLES["users"]["RETURNING"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE ". \Config\TABLES["users"]["pk"] ."=$1 AND user_type=$2;";
+      if(isset($_SESSION[\Config\TABLES["users"]["pk"]])) {
+        $params = [$_SESSION[\Config\TABLES["users"]["pk"]]];
+        $query = "SELECT ". implode(", ", \Config\TABLES["users"]["RETURNING"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE ". \Config\TABLES["users"]["pk"] ."=$1;";
         $result = pg_query_params($query, $params);
 
         // user doesn't exist
@@ -15,8 +15,12 @@
         }
 
         // user has been suspended
-        else if(pg_affected_rows($result) === 1 && (pg_fetch_all($result)[0]["user_status"] === "f" || pg_fetch_all($result)[0]["user_type"] !== "ADMINISTRATOR")) {
+        else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_status"] === "f") {
           Util::halt("unauthorized, account has been suspended", 401);
+        }
+
+        else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_type"] !== "ADMINISTRATOR") {
+          Util::halt("unauthorized, you need to be an administrator", 401);
         }
       }
 
