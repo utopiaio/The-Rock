@@ -106,7 +106,7 @@
 
 
 
-   /**
+    /**
      * halts execution but does NOT clear the session
      *
      * @param string $message - message to be sent back with `error` property
