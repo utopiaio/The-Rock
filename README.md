@@ -13,6 +13,7 @@ Moedoo::insert($table, $data)
 Moedoo::select($table, $id)
 Moedoo::delete($table, $id)
 Moedoo::update($table, $data, $update)
+Moedoo::search($table, $query) - /table?q=query
 
 Rock::authenticated()
 Rock::login($username, $password)

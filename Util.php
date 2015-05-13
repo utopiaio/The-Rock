@@ -64,7 +64,7 @@
      * @param array $data
      * @param integer $status
      */
-    public static function JSON($data, $status) {
+    public static function JSON($data, $status = 202) {
       $app = \Slim\Slim::getInstance();
       $response = $app->response;
       $response->setStatus($status);

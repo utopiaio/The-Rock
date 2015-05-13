@@ -62,7 +62,8 @@
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
-      "bool"      => []
+      "bool"      => [],
+      "search"    => ["data"]
     ],
     "background"  => [
       "pk"        => "id",
@@ -70,7 +71,8 @@
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
-      "bool"      => []
+      "bool"      => [],
+      "search"    => ["data"]
     ],
     "contact"     => [
       "pk"        => "id",
@@ -78,7 +80,8 @@
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
-      "bool"      => []
+      "bool"      => [],
+      "search"    => ["data"]
     ],
     "logo"        => [
       "pk"        => "id",
@@ -86,7 +89,8 @@
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
-      "bool"      => []
+      "bool"      => [],
+      "search"    => ["data"]
     ],
     // "media"       => [
     //   "pk"        => "id",
@@ -102,7 +106,8 @@
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
-      "bool"      => []
+      "bool"      => [],
+      "search"    => ["data"]
     ],
     "users"       => [
       "pk"        => "user_id",
@@ -110,7 +115,8 @@
       "RETURNING" => ["user_id", "user_full_name", "user_username", "user_type", "user_status"],
       "JSON"      => [],
       "int"       => ["user_id"],
-      "bool"      => ["user_status"]
+      "bool"      => ["user_status"],
+      "search"    => ["user_full_name", "user_username", "user_type"]
     ]
   ];
 ?>
