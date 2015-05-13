@@ -18,6 +18,59 @@
 
 
     /**
+     * returns matching rows against query
+     *
+     * @param string $table
+     * @param string $query
+     */
+    public static function search($table, $query) {
+      $columns = implode(", ", \Config\TABLES[$table]["RETURNING"]);
+      $params = ["%{$query}%"];
+      $where = "";
+
+      foreach(\Config\TABLES[$table]["search"] as $key => $value) {
+        $where .= "{$value} ILIKE $1 OR ";
+      }
+
+      $where = substr($where, 0, -4);
+
+      $query = "SELECT {$columns} FROM ". \Config\TABLE_PREFIX ."{$table} WHERE ${where}";
+      $query .= " ORDER BY ". \Config\TABLES[$table]["pk"] ." DESC;";
+      $result = pg_query_params($query, $params);
+
+      if(pg_affected_rows($result) === 0) {
+        Util::JSON([], 200);
+      }
+
+      else {
+        $rows = pg_fetch_all($result);
+
+        foreach($rows as $index => $row) {
+          foreach($row as $column => $value) {
+            // JSON string -> array...
+            if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+              $rows[$index][$column] = json_decode($value);
+            }
+
+            // integer string -> integer...
+            if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
+              $rows[$index][$column] = (int)$value;
+            }
+
+            // bool string -> bool...
+            if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
+              $rows[$index][$column] = $value === "t" ? true : false;
+            }
+          }
+        }
+
+        Util::JSON($rows, 200);
+      }
+    }
+
+
+
+    /**
      * executes SELECT command on a given table
      * if given an $id it'll return that object, if not it'll return all entries
      *

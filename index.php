@@ -45,7 +45,15 @@
     $app->get("(/:id)", function($table, $id = -1) use($app) {
       Rock::check("GET", $table);
 
-      $id === -1 ? Moedoo::select($table) : Moedoo::select($table, $id);
+      // search query requested on a table
+      if(isset($_GET["q"]) === true && $id === -1) {
+        Moedoo::search($table, $_GET["q"]);
+      }
+
+      // select query requested
+      else {
+        $id === -1 ? Moedoo::select($table) : Moedoo::select($table, $id);
+      }
     })->conditions(["id" => "\d+"]);
 
     $app->post("", function($table) use($app) {
