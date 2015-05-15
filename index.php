@@ -11,6 +11,7 @@
 
   $app = new \Slim\Slim([
     "debug" => \Config\DEBUG,
+    "rock.debug" => \Config\ROCK_DEBUG,
     "cookies.encrypt" => \Config\COOKIES_ENCRYPT
   ]);
 
@@ -26,7 +27,7 @@
   // login
   $app->post("/login", function() use($app) {
     $request = $app->request;
-    $body = Util::to_array(json_decode($request->getBody()));
+    $body = Util::to_array($request->getBody());
 
     if(!array_key_exists("username", $body) || !array_key_exists("password", $body)) {
       Util::stop("bad request, check the payload and try again", 400);
@@ -60,7 +61,7 @@
       Rock::check("POST", $table);
 
       $request = $app->request;
-      $body = Util::to_array(json_decode($request->getBody()));
+      $body = Util::to_array($request->getBody());
       Moedoo::insert($table, $body);
     });
 
@@ -68,7 +69,7 @@
       Rock::check("PUT", $table);
 
       $request = $app->request;
-      $body = Util::to_array(json_decode($request->getBody()));
+      $body = Util::to_array($request->getBody());
       Moedoo::update($table, $body, $id);
     })->conditions(["id" => "\d+"]);
 
@@ -116,7 +117,7 @@
   // executed whenever an error is thrown
   // PS: called when `debug` is set to false
   $app->error(function(Exception $e) use($app) {
-    Util::JSON(["error" => "Application Error, if problem persists please contact system administrator"], 500);
+    Util::JSON(["error" => $app->config('rock.debug') === true ? $e->getMessage() : "Application Error, if problem persists please contact system administrator."], 500);
   });
 
   $app->run();

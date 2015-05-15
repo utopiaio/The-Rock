@@ -23,25 +23,33 @@
      * @param string $table
      * @param string $query
      */
-    public static function search($table, $query) {
+    public static function search($table, $q) {
       $columns = implode(", ", \Config\TABLES[$table]["RETURNING"]);
-      $params = ["%{$query}%"];
+      $q = preg_replace("/ +/", "|", trim($q));
+      $q = preg_replace("/ /", "|", $q);
+      $params = [$q];
+      $query = "SELECT {$columns} FROM ". \Config\TABLE_PREFIX ."{$table} WHERE ";
       $where = "";
+      $order_by = "ORDER BY";
 
       foreach(\Config\TABLES[$table]["search"] as $key => $value) {
-        $where .= "{$value} ILIKE $1 OR ";
+        $where .= "to_tsvector({$value}) @@ to_tsquery($1) OR ";
       }
-
       $where = substr($where, 0, -4);
 
-      $query = "SELECT {$columns} FROM ". \Config\TABLE_PREFIX ."{$table} WHERE ${where}";
-      $query .= " ORDER BY ". \Config\TABLES[$table]["pk"] ." DESC;";
-      $result = pg_query_params($query, $params);
+      foreach (\Config\TABLES[$table]["search"] as $key => $value) {
+        $order_by .= " ts_rank(to_tsvector($value), to_tsquery($1)) DESC, ";
+      }
+      $order_by = substr($order_by, 0, -2);
 
+      $result = pg_query_params("{$query} {$where} {$order_by};", $params);
+
+      // full-text returned empty result
       if(pg_affected_rows($result) === 0) {
         Util::JSON([], 200);
       }
 
+      // we have rows to display...
       else {
         $rows = pg_fetch_all($result);
 
@@ -180,27 +188,48 @@
       $returning = implode(", ", \Config\TABLES[$table]["RETURNING"]);
 
       $query = "INSERT INTO ". \Config\TABLE_PREFIX ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
-      $result = pg_query_params($query, $params);
-      $row = pg_fetch_all($result)[0];
 
-      foreach($row as $column => $value) {
-        // JSON string -> array...
-        if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
-          $row[$column] = json_decode($value);
+      try {
+        $result = pg_query_params($query, $params);
+
+        if(pg_affected_rows($result) === 1) {
+          $row = pg_fetch_all($result)[0];
+
+          foreach($row as $column => $value) {
+            // JSON string -> array...
+            if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+              $row[$column] = json_decode($value);
+            }
+
+            // integer string -> integer...
+            if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
+              $row[$column] = (int)$value;
+            }
+
+            // bool string -> bool...
+            if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
+              $row[$column] = $value === "t" ? true : false;
+            }
+          }
+
+          Util::JSON($row, 202);
         }
 
-        // integer string -> integer...
-        if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
-          $row[$column] = (int)$value;
+        // that hurt
+        else {
+          Util::JSON(["error" => "requested data was not saved, try again. if problem persists contact system administrator"], 501);
+        }
+      } catch(Exception $e) {
+        $error_message = (string) $e -> getMessage();
+
+        if(preg_match("/duplicate/", $error_message) === 1) {
+          Util::JSON(["error" => "data requested violates unique constraint, try again"], 409);
         }
 
-        // bool string -> bool...
-        if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
-          $row[$column] = $value === "t" ? true : false;
+        else {
+          throw new Exception($error_message, 1);
         }
       }
-
-      Util::JSON($row, 202);
     }
 
 
@@ -234,40 +263,52 @@
       array_push($params, $id);
 
       $query = "UPDATE ". \Config\TABLE_PREFIX ."{$table} SET {$set} WHERE ". \Config\TABLES[$table]["pk"] ."=\${$count} RETURNING {$columns};";
-      $result = pg_query_params($query, $params);
+      try {
+        $result = pg_query_params($query, $params);
 
-      // nothing was affected
-      if(pg_affected_rows($result) === 0) {
-        Util::JSON(["error" => "object not found"], 404);
-      }
-
-      // everything went as expected
-      else if(pg_affected_rows($result) === 1) {
-        $row = pg_fetch_all($result)[0];
-
-        foreach($row as $column => $value) {
-          // JSON string -> array...
-          if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
-            $row[$column] = json_decode($value);
-          }
-
-          // integer string -> integer...
-          if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
-            $row[$column] = (int)$value;
-          }
-
-          // bool string -> bool...
-          if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
-            $row[$column] = $value === "t" ? true : false;
-          }
+        // nothing was affected
+        if(pg_affected_rows($result) === 0) {
+          Util::JSON(["error" => "object not found"], 404);
         }
 
-        Util::JSON($row, 202);
-      }
+        // everything went as expected
+        else if(pg_affected_rows($result) === 1) {
+          $row = pg_fetch_all($result)[0];
 
-      // something horrible has happened
-      else {
-        Util::JSON(["error" => "ouch, that hurt"], 500);
+          foreach($row as $column => $value) {
+            // JSON string -> array...
+            if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+              $row[$column] = json_decode($value);
+            }
+
+            // integer string -> integer...
+            if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
+              $row[$column] = (int)$value;
+            }
+
+            // bool string -> bool...
+            if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
+              $row[$column] = $value === "t" ? true : false;
+            }
+          }
+
+          Util::JSON($row, 202);
+        }
+
+        // something horrible has happened
+        else {
+          Util::JSON(["error" => "ouch, that hurt"], 500);
+        }
+      } catch(Exception $e) {
+        $error_message = (string) $e -> getMessage();
+
+        if(preg_match("/duplicate/", $error_message) === 1) {
+          Util::JSON(["error" => "data requested violates unique constraint, try again"], 409);
+        }
+
+        else {
+          throw new Exception($error_message, 1);
+        }
       }
     }
 

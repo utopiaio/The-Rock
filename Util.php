@@ -21,18 +21,26 @@
 
 
     /**
-     * given a Std Object returns an associative array representation of the object
-     * @param object $object
-     *
+     * given a Std Object returns an associative array representation of the string
+     * @param string $body
+     * @return array
      */
-    public static function to_array($object) {
-      $array = [];
+    public static function to_array($body) {
+      $body = json_decode($body);
 
-      foreach($object as $key => $value) {
-        $array[$key] = $value;
+      if($body === null) {
+        Util::stop("bad request, check the payload and try again", 400);
       }
 
-      return $array;
+      else {
+        $array = [];
+
+        foreach($body as $key => $value) {
+          $array[$key] = $value;
+        }
+
+        return $array;
+      }
     }
 
 
