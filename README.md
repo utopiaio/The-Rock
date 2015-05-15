@@ -1,6 +1,6 @@
 ```php
 Util::generate_token($length)
-Util::to_array($array)
+Util::to_array($body)
 Util::validatePayload($table, $payload) - checks weather or not the payload corresponds to the config file
 Util::JSON($data, $statusCode)
 Util::hash($string)
