@@ -16,7 +16,8 @@
   const SALT = "canYouSmellWhatTheRockIsCooking";
 
   // Slim
-  const DEBUG = true;
+  const DEBUG = false;
+  const ROCK_DEBUG = true;
   const COOKIES_ENCRYPT = true;
   const COOKIE_LIFETIME = "1 week";
   const COOKIE_PATH = "/";
