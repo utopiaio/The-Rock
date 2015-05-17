@@ -37,7 +37,7 @@
       }
       $where = substr($where, 0, -4);
 
-      foreach (\Config\TABLES[$table]["search"] as $key => $value) {
+      foreach(\Config\TABLES[$table]["search"] as $key => $value) {
         $order_by .= " ts_rank(to_tsvector($value), to_tsquery($1)) DESC, ";
       }
       $order_by = substr($order_by, 0, -2);
@@ -220,10 +220,14 @@
           Util::JSON(["error" => "requested data was not saved, try again. if problem persists contact system administrator"], 501);
         }
       } catch(Exception $e) {
-        $error_message = (string) $e -> getMessage();
+        $error_message = (string)$e->getMessage();
 
         if(preg_match("/duplicate/", $error_message) === 1) {
           Util::JSON(["error" => "data requested violates unique constraint, try again"], 409);
+        }
+
+        else if(preg_match("/foreign key/", $error_message) === 1) {
+          Util::JSON(["error" => "data requested violates foreign key constraint, try again"], 409);
         }
 
         else {
@@ -300,10 +304,14 @@
           Util::JSON(["error" => "ouch, that hurt"], 500);
         }
       } catch(Exception $e) {
-        $error_message = (string) $e -> getMessage();
+        $error_message = (string)$e->getMessage();
 
         if(preg_match("/duplicate/", $error_message) === 1) {
           Util::JSON(["error" => "data requested violates unique constraint, try again"], 409);
+        }
+
+        else if(preg_match("/foreign key/", $error_message) === 1) {
+          Util::JSON(["error" => "data requested violates foreign key constraint, try again"], 409);
         }
 
         else {

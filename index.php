@@ -85,7 +85,7 @@
   $app->options("/(:path+)", function() use($app) {
     $response = $app->response;
     $origin = $app->request->headers["Origin"];
-    $origin_stripped = preg_replace("/http:\/\/|www\./", "", $origin);
+    $origin_stripped = preg_replace("/https?:\/\/|www\./", "", $origin);
 
     if(in_array("*", \Config\CORS_WHITE_LIST)  === true) {
       $response->headers->set("Access-Control-Allow-Origin", "*");
