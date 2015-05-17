@@ -52,7 +52,7 @@
      * @param string $table
      * @param payload
      */
-    public static function validatePayload($table, $payload) {
+    public static function validate_payload($table, $payload) {
       if(is_null($payload) === true) {
         Util::stop("bad request, check the payload and try again", 400);
       }

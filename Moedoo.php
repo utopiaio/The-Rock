@@ -164,7 +164,7 @@
      * @param array $data - data to be inserted
      */
     public static function insert($table, $data) {
-      Util::validatePayload($table, $data);
+      Util::validate_payload($table, $data);
 
       $count = 1;
       $columns = [];
@@ -245,7 +245,7 @@
      * @param array $newData - data which to replace on
      */
     public static function update($table, $newData, $id) {
-      Util::validatePayload($table, $newData);
+      Util::validate_payload($table, $newData);
 
       $count = 1;
       $set = [];
