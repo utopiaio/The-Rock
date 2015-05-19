@@ -63,6 +63,8 @@
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
+      "float"     => [],
+      "double"    => [],
       "bool"      => [],
       "search"    => ["data"]
     ],
@@ -72,6 +74,8 @@
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
+      "float"     => [],
+      "double"    => [],
       "bool"      => [],
       "search"    => ["data"]
     ],
@@ -81,6 +85,8 @@
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
+      "float"     => [],
+      "double"    => [],
       "bool"      => [],
       "search"    => ["data"]
     ],
@@ -90,6 +96,8 @@
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
+      "float"     => [],
+      "double"    => [],
       "bool"      => [],
       "search"    => ["data"]
     ],
@@ -107,6 +115,8 @@
       "RETURNING" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
+      "float"     => [],
+      "double"    => [],
       "bool"      => [],
       "search"    => ["data"]
     ],
@@ -116,6 +126,8 @@
       "RETURNING" => ["user_id", "user_full_name", "user_username", "user_type", "user_status"],
       "JSON"      => [],
       "int"       => ["user_id"],
+      "float"     => [],
+      "double"    => [],
       "bool"      => ["user_status"],
       "search"    => ["user_full_name", "user_username", "user_type"]
     ]

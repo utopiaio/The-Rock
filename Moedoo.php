@@ -1,6 +1,49 @@
 <?php
   class Moedoo {
     /**
+     * given an array of rows straight out of pg it'll cast the appropriate
+     * type according to `config`
+     *
+     * @param array $rows
+     * @param string $table - table on which to apply the casting
+     * @return array
+     */
+    private static function cast($rows, $table) {
+      foreach($rows as $index => $row) {
+        foreach($row as $column => $value) {
+          // JSON string -> array...
+          if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
+            $rows[$index][$column] = json_decode($value);
+          }
+
+          // integer string -> integer...
+          if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
+            $rows[$index][$column] = (int)$value;
+          }
+
+          // float string -> float...
+          if(in_array($column, \Config\TABLES[$table]["float"]) === true) {
+            $rows[$index][$column] = (float)$value;
+          }
+
+          // double string -> double...
+          if(in_array($column, \Config\TABLES[$table]["double"]) === true) {
+            $rows[$index][$column] = (double)$value;
+          }
+
+          // bool string -> bool...
+          if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
+            $rows[$index][$column] = $value === "t" ? true : false;
+          }
+        }
+      }
+
+      return $rows;
+    }
+
+
+
+    /**
      * instantiates db connection
      *
      * @param string $host
@@ -51,27 +94,7 @@
 
       // we have rows to display...
       else {
-        $rows = pg_fetch_all($result);
-
-        foreach($rows as $index => $row) {
-          foreach($row as $column => $value) {
-            // JSON string -> array...
-            if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
-              $rows[$index][$column] = json_decode($value);
-            }
-
-            // integer string -> integer...
-            if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
-              $rows[$index][$column] = (int)$value;
-            }
-
-            // bool string -> bool...
-            if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
-              $rows[$index][$column] = $value === "t" ? true : false;
-            }
-          }
-        }
-
+        $rows = Moedoo::cast(pg_fetch_all($result), $table);
         Util::JSON($rows, 200);
       }
     }
@@ -106,51 +129,13 @@
 
       // single row requested found
       else if(pg_affected_rows($result) === 1 && $id !== -1) {
-        $row = pg_fetch_all($result)[0];
-
-        foreach($row as $column => $value) {
-          // JSON string -> array...
-          if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
-            $row[$column] = json_decode($value);
-          }
-
-          // integer string -> integer...
-          if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
-            $row[$column] = (int)$value;
-          }
-
-          // bool string -> bool...
-          if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
-            $row[$column] = $value === "t" ? true : false;
-          }
-        }
-
+        $row = Moedoo::cast(pg_fetch_all($result), $table)[0];
         Util::JSON($row, 200);
       }
 
       // all is good
       else {
-        $rows = pg_fetch_all($result);
-
-        foreach($rows as $index => $row) {
-          foreach($row as $column => $value) {
-            // JSON string -> array...
-            if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
-              $rows[$index][$column] = json_decode($value);
-            }
-
-            // integer string -> integer...
-            if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
-              $rows[$index][$column] = (int)$value;
-            }
-
-            // bool string -> bool...
-            if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
-              $rows[$index][$column] = $value === "t" ? true : false;
-            }
-          }
-        }
-
+        $rows = Moedoo::cast(pg_fetch_all($result), $table);
         Util::JSON($rows, 200);
       }
     }
@@ -193,25 +178,7 @@
         $result = pg_query_params($query, $params);
 
         if(pg_affected_rows($result) === 1) {
-          $row = pg_fetch_all($result)[0];
-
-          foreach($row as $column => $value) {
-            // JSON string -> array...
-            if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
-              $row[$column] = json_decode($value);
-            }
-
-            // integer string -> integer...
-            if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
-              $row[$column] = (int)$value;
-            }
-
-            // bool string -> bool...
-            if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
-              $row[$column] = $value === "t" ? true : false;
-            }
-          }
-
+          $row = Moedoo::cast(pg_fetch_all($result, $table))[0];
           Util::JSON($row, 202);
         }
 
@@ -277,25 +244,7 @@
 
         // everything went as expected
         else if(pg_affected_rows($result) === 1) {
-          $row = pg_fetch_all($result)[0];
-
-          foreach($row as $column => $value) {
-            // JSON string -> array...
-            if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
-              $row[$column] = json_decode($value);
-            }
-
-            // integer string -> integer...
-            if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
-              $row[$column] = (int)$value;
-            }
-
-            // bool string -> bool...
-            if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
-              $row[$column] = $value === "t" ? true : false;
-            }
-          }
-
+          $row = Moedoo::cast(pg_fetch_all($result), $table)[0];
           Util::JSON($row, 202);
         }
 
@@ -344,25 +293,7 @@
 
       // everything went as expected
       else if(pg_affected_rows($result) === 1) {
-        $row = pg_fetch_all($result)[0];
-
-        foreach($row as $column => $value) {
-          // JSON string -> array...
-          if(in_array($column, \Config\TABLES[$table]["JSON"]) === true) {
-            $row[$column] = json_decode($value);
-          }
-
-          // integer string -> integer...
-          if(in_array($column, \Config\TABLES[$table]["int"]) === true) {
-            $row[$column] = (int)$value;
-          }
-
-          // bool string -> bool...
-          if(in_array($column, \Config\TABLES[$table]["bool"]) === true) {
-            $row[$column] = $value === "t" ? true : false;
-          }
-        }
-
+        $row = Moedoo::cast(pg_fetch_all($result), $table)[0];
         Util::JSON($row, 200);
       }
 
