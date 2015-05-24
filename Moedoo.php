@@ -250,7 +250,7 @@
 
         // something horrible has happened
         else {
-          Util::JSON(["error" => "ouch, that hurt"], 500);
+          Util::stop("ouch, that hurt", 500);
         }
       } catch(Exception $e) {
         $error_message = (string)$e->getMessage();
@@ -299,7 +299,7 @@
 
       // something horrible has happened
       else {
-        Util::JSON(["error" => "ouch, that hurt"], 500);
+        Util::stop("ouch, that hurt", 500);
       }
     }
   }

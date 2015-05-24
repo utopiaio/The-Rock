@@ -106,12 +106,12 @@
     }
 
     else {
-      Util::JSON(["error" => "CORS forbidden, please contact system administrator"], 403);
+      Util::halt("CORS forbidden, please contact system administrator", 403);
     }
   });
 
   $app->notFound(function() {
-    Util::JSON(["error" => "requested URL was not found"], 404);
+    Util::stop("requested URL was not found", 404);
   });
 
   // executed whenever an error is thrown
