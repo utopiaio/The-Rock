@@ -15,14 +15,14 @@
     "cookies.encrypt" => \Config\COOKIES_ENCRYPT
   ]);
 
-  $app->add(new \Slim\Middleware\SessionCookie([
-    "expires" => \Config\COOKIE_LIFETIME,
-    "path" => \Config\COOKIE_PATH,
-    "secure" => \Config\COOKIE_SECURE,
-    "httponly" => \Config\COOKIE_HTTPONLY,
-    "name" => \Config\COOKIE_NAME,
-    "secret" => \Config\COOKIE_SECRET_KEY
-  ]));
+  // $app->add(new \Slim\Middleware\SessionCookie([
+  //   "expires" => \Config\COOKIE_LIFETIME,
+  //   "path" => \Config\COOKIE_PATH,
+  //   "secure" => \Config\COOKIE_SECURE,
+  //   "httponly" => \Config\COOKIE_HTTPONLY,
+  //   "name" => \Config\COOKIE_NAME,
+  //   "secret" => \Config\COOKIE_SECRET_KEY
+  // ]));
 
   // login
   $app->post("/login", function() use($app) {
