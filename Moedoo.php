@@ -151,6 +151,10 @@
     public static function insert($table, $data) {
       Util::validate_payload($table, $data);
 
+      if($table === "users") {
+        $data["user_username"] = strtolower($data["user_username"]);
+      }
+
       $count = 1;
       $columns = [];
       $holders = []; // ${$index}
@@ -250,7 +254,7 @@
 
         // something horrible has happened
         else {
-          Util::stop("ouch, that hurt", 500);
+          Util::halt("ouch, that hurt", 500);
         }
       } catch(Exception $e) {
         $error_message = (string)$e->getMessage();
@@ -299,7 +303,7 @@
 
       // something horrible has happened
       else {
-        Util::stop("ouch, that hurt", 500);
+        Util::halt("ouch, that hurt", 500);
       }
     }
   }
