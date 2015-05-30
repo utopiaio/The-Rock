@@ -182,7 +182,7 @@
         $result = pg_query_params($query, $params);
 
         if(pg_affected_rows($result) === 1) {
-          $row = Moedoo::cast(pg_fetch_all($result, $table))[0];
+          $row = Moedoo::cast(pg_fetch_all($result), $table)[0];
           Util::JSON($row, 202);
         }
 
