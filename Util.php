@@ -21,7 +21,9 @@
 
 
     /**
-     * given a Std Object returns an associative array representation of the string
+     * given a JSON representation of a JSON string, returns an associative array
+     * representation of it
+     *
      * @param string $body
      * @return array
      */
@@ -54,12 +56,12 @@
      */
     public static function validate_payload($table, $payload) {
       if(is_null($payload) === true) {
-        Util::stop("bad request, check the payload and try again", 400);
+        Util::halt("bad request, check the payload and try again", 400);
       }
 
       foreach($payload as $key => $value) {
         if(in_array($key, \Config\TABLES[$table]["columns"]) === false) {
-          Util::stop("bad request, check the payload and try again", 400);
+          Util::halt("bad request, check the payload and try again", 400);
         }
       }
     }
@@ -99,43 +101,16 @@
 
 
     /**
-     * "destroys" the app first by calling `Util::clear_session()`
-     * then sends one LAST message before halting
+     * "destroys" the app
+     * sends one LAST message before halting
      *
      * @param string $message - message to be sent back with `error` property
      */
     public static function halt($message, $status = 403) {
-      Util::clear_session();
       $app = \Slim\Slim::getInstance();
       $response = $app->response;
       $response->headers->set("Content-Type", "application/json;charset=utf-8");
       $app->halt($status, json_encode(["error" => $message]));
-    }
-
-
-
-    /**
-     * halts execution but does NOT clear the session
-     *
-     * @param string $message - message to be sent back with `error` property
-     */
-    public static function stop($message, $status = 404) {
-      $app = \Slim\Slim::getInstance();
-      $response = $app->response;
-      $response->headers->set("Content-Type", "application/json;charset=utf-8");
-      $app->halt($status, json_encode(["error" => $message]));
-    }
-
-
-
-    /**
-     * clears $_SESSION
-     */
-    public static function clear_session() {
-      $app = \Slim\Slim::getInstance();
-      $app->deleteCookie(\Config\COOKIE_NAME);
-      $_SESSION = [];
-      session_destroy();
     }
   }
 ?>

@@ -1,11 +1,20 @@
 <?php
   class Rock {
     /**
-     * checks session and authenticates or halts execution
+     * checks jwt and authenticates or halts execution
      */
     public static function authenticated() {
-      if(isset($_SESSION[\Config\TABLES["users"]["pk"]])) {
-        $params = [$_SESSION[\Config\TABLES["users"]["pk"]]];
+      $app = \Slim\Slim::getInstance();
+      $request = $app->request;
+
+      if(isset($request->headers[\Config\JWT_REQ_HEADER])) {
+        try {
+          $decoded = (array)JWT::decode($request->headers["X-Access-Token"], \Config\JWT_KEY, ["HS256"]);
+        } catch(Exception $e) {
+          Util::halt("unauthorized, please login", 401);
+        }
+
+        $params = [$decoded["id"]];
         $query = "SELECT ". implode(", ", \Config\TABLES["users"]["RETURNING"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE ". \Config\TABLES["users"]["pk"] ."=$1;";
         $result = pg_query_params($query, $params);
 
@@ -18,13 +27,8 @@
         else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_status"] === "f") {
           Util::halt("unauthorized, account has been suspended", 401);
         }
-
-        else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_type"] !== "ADMINISTRATOR") {
-          Util::halt("unauthorized, you need to be an administrator", 401);
-        }
       }
 
-      // straight up unauthenticated
       else {
         Util::halt("unauthorized, please login", 401);
       }
@@ -33,12 +37,13 @@
 
 
     /**
-     * given username and password info, it'll create session for administrator
+     * given username and password info
+     * it'll return authenticated user info along with the jwt
      *
      * @param string $username
      * @param string $password - raw password
      */
-    public static function login($username, $password) {
+    public static function authenticate($username, $password) {
       $password = Util::hash($password);
       $params = [$username, $password, "ADMINISTRATOR"];
       $query = "SELECT ". implode(", ", \Config\TABLES["users"]["RETURNING"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE user_username=$1 AND user_password=$2 AND user_type=$3;";
@@ -55,44 +60,24 @@
       }
 
       // proceed with authentication
+      // building JWT...
       else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_status"] === "t") {
         $user = pg_fetch_all($result)[0];
         $user["user_status"] = true;
 
-        Util::JSON($user, 202);
+        $token = [
+          "iss" => \Config\JWT_ISS,
+          "iat" => strtotime(\Config\JWT_IAT),
+          "id" => $user["user_id"]
+        ];
 
-        foreach($user as $key => $value) {
-          $_SESSION[$key] = $value;
-        }
+        $jwt = JWT::encode($token, \Config\JWT_KEY);
+        Util::JSON(["jwt" => $jwt, "info" => $user]);
       }
 
       // something horrible has happened
       else {
         Util::JSON(["error" => "ouch, that hurt"], 500);
-      }
-    }
-
-
-
-    /**
-     * clears a session (if there's one)
-     * no mater the condition - execution is halted
-     */
-    public static function logout() {
-      $app = \Slim\Slim::getInstance();
-
-      // one property is enough to check for session
-      if(isset($_SESSION[\Config\TABLES["users"]["pk"]])) {
-        Util::clear_session();
-        $app = \Slim\Slim::getInstance();
-        $response = $app->response;
-        $response->headers->set("Content-Type", "application/json");
-        $app->halt(202, json_encode(["success" => "thank you for spending quality time with the site today"]));
-      }
-
-      // there's no session to clear
-      else {
-        Util::halt("you need to be logged in to logout", 412);
       }
     }
 
@@ -109,7 +94,7 @@
      */
     public static function check($method, $table) {
       if(array_key_exists($table, \Config\TABLES) === false) {
-        Util::stop("requested URL was not found");
+        Util::halt("requested URL was not found");
       }
 
       if(in_array($table, \Config\RESTRICTED_REQUESTS[$method]) === true) {
@@ -117,7 +102,7 @@
       }
 
       if(in_array($table, \Config\FORBIDDEN_REQUESTS[$method]) === true) {
-        Util::stop("request is forbidden", 403);
+        Util::halt("request is forbidden", 403);
       }
     }
   }

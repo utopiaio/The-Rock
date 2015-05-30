@@ -1,5 +1,9 @@
 <?php
   require "lib/Slim/Slim.php";
+  require "lib/jwt/Authentication/JWT.php";
+  require "lib/jwt/Exceptions/BeforeValidException.php";
+  require "lib/jwt/Exceptions/ExpiredException.php";
+  require "lib/jwt/Exceptions/SignatureInvalidException.php";
   require "config.php";
   require "Moedoo.php";
   require "Util.php";
@@ -11,34 +15,19 @@
 
   $app = new \Slim\Slim([
     "debug" => \Config\DEBUG,
-    "rock.debug" => \Config\ROCK_DEBUG,
-    "cookies.encrypt" => \Config\COOKIES_ENCRYPT
+    "rock.debug" => \Config\ROCK_DEBUG
   ]);
 
-  // $app->add(new \Slim\Middleware\SessionCookie([
-  //   "expires" => \Config\COOKIE_LIFETIME,
-  //   "path" => \Config\COOKIE_PATH,
-  //   "secure" => \Config\COOKIE_SECURE,
-  //   "httponly" => \Config\COOKIE_HTTPONLY,
-  //   "name" => \Config\COOKIE_NAME,
-  //   "secret" => \Config\COOKIE_SECRET_KEY
-  // ]));
-
-  // login
-  $app->post("/login", function() use($app) {
+  // authenticate
+  $app->post("/authenticate", function() use($app) {
     $request = $app->request;
     $body = Util::to_array($request->getBody());
 
     if(!array_key_exists("username", $body) || !array_key_exists("password", $body)) {
-      Util::stop("bad request, check the payload and try again", 400);
+      Util::halt("bad request, check the payload and try again", 400);
     }
 
-    Rock::login($body["username"], $body["password"]);
-  });
-
-  // logout
-  $app->post("/logout", function() use($app) {
-    Rock::logout();
+    Rock::authenticate(strtolower($body["username"]), $body["password"]);
   });
 
   // generic CRUD mapper
@@ -111,7 +100,7 @@
   });
 
   $app->notFound(function() {
-    Util::stop("requested URL was not found", 404);
+    Util::halt("requested URL was not found", 404);
   });
 
   // executed whenever an error is thrown
