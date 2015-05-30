@@ -15,16 +15,15 @@
   const HASH = "sha512";
   const SALT = "canYouSmellWhatTheRockIsCooking";
 
+  // JWT
+  const JWT_REQ_HEADER = "X-Access-Token";
+  const JWT_KEY = "canYouSmellWhatTheRockIsCooking";
+  const JWT_ISS = "The Rock";
+  const JWT_IAT = "now";
+
   // Slim
   const DEBUG = false;
   const ROCK_DEBUG = true;
-  const COOKIES_ENCRYPT = true;
-  const COOKIE_LIFETIME = "1 week";
-  const COOKIE_PATH = "/";
-  const COOKIE_SECURE = false;
-  const COOKIE_HTTPONLY = true;
-  const COOKIE_SECRET_KEY = "THE_ROCK";
-  const COOKIE_NAME = "THE_ROCK";
 
   // database connection string
   const DB_HOST = "localhost";
@@ -36,10 +35,11 @@
   // white-list for CORS
   const CORS_WHITE_LIST = ["*", "rock.io", "foo.com"];
   const CORS_METHODS = ["GET", "POST", "PUT", "DELETE"];
-  const CORS_HEADERS = ["accept", "content-type"];
+  const CORS_HEADERS = ["accept", "content-type", JWT_REQ_HEADER];
   const CORS_MAX_AGE = "86400";
 
-  // requests that require authenticated session
+  // requests that require authentication
+  // + `administration` user role is required
   const RESTRICTED_REQUESTS = [
     "GET"     => ["users"],
     "POST"    => ["users"],
