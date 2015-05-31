@@ -15,7 +15,7 @@
         }
 
         $params = [$decoded["id"]];
-        $query = "SELECT ". implode(", ", \Config\TABLES["users"]["RETURNING"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE ". \Config\TABLES["users"]["pk"] ."=$1;";
+        $query = "SELECT ". implode(", ", \Config\TABLES["users"]["returning"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE ". \Config\TABLES["users"]["pk"] ."=$1;";
         $result = pg_query_params($query, $params);
 
         // user doesn't exist
@@ -46,7 +46,7 @@
     public static function authenticate($username, $password) {
       $password = Util::hash($password);
       $params = [$username, $password, "ADMINISTRATOR"];
-      $query = "SELECT ". implode(", ", \Config\TABLES["users"]["RETURNING"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE user_username=$1 AND user_password=$2 AND user_type=$3;";
+      $query = "SELECT ". implode(", ", \Config\TABLES["users"]["returning"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE user_username=$1 AND user_password=$2 AND user_type=$3;";
       $result = pg_query_params($query, $params);
 
       // straight up, unauthorized

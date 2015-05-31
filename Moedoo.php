@@ -67,7 +67,7 @@
      * @param string $query
      */
     public static function search($table, $q) {
-      $columns = implode(", ", \Config\TABLES[$table]["RETURNING"]);
+      $columns = implode(", ", \Config\TABLES[$table]["returning"]);
       $q = preg_replace("/ +/", "|", trim($q));
       $q = preg_replace("/ /", "|", $q);
       $params = [$q];
@@ -109,7 +109,7 @@
      * @param integer $id - id on which to select on
      */
     public static function select($table, $id = -1) {
-      $columns = implode(", ", \Config\TABLES[$table]["RETURNING"]);
+      $columns = implode(", ", \Config\TABLES[$table]["returning"]);
       $params = $id === -1 ? [] : [$id];
 
       $query = "SELECT {$columns} FROM ". \Config\TABLE_PREFIX ."{$table}";
@@ -174,7 +174,7 @@
 
       $columns = implode(", ", $columns);
       $holders = implode(", ", $holders);
-      $returning = implode(", ", \Config\TABLES[$table]["RETURNING"]);
+      $returning = implode(", ", \Config\TABLES[$table]["returning"]);
 
       $query = "INSERT INTO ". \Config\TABLE_PREFIX ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
 
@@ -221,7 +221,7 @@
       $count = 1;
       $set = [];
       $params = [];
-      $columns = implode(", ", \Config\TABLES[$table]["RETURNING"]);
+      $columns = implode(", ", \Config\TABLES[$table]["returning"]);
 
       foreach($newData as $column => $value) {
         // array -> string...
@@ -285,7 +285,7 @@
      */
     public static function delete($table, $id) {
       $params = [$id];
-      $columns = implode(", ", \Config\TABLES[$table]["RETURNING"]);
+      $columns = implode(", ", \Config\TABLES[$table]["returning"]);
 
       $query = "DELETE FROM ". \Config\TABLE_PREFIX ."{$table} WHERE ". \Config\TABLES[$table]["pk"] ."=$1 RETURNING {$columns};";
       $result = pg_query_params($query, $params);
