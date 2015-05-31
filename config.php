@@ -32,7 +32,7 @@
   const DB_PORT = 5432;
   const DB_NAME = "the_rock";
 
-  // white-list for CORS
+  // CORS
   const CORS_WHITE_LIST = ["*", "rock.io", "foo.com"];
   const CORS_METHODS = ["GET", "POST", "PUT", "DELETE"];
   const CORS_HEADERS = ["accept", "content-type", JWT_REQ_HEADER];
@@ -60,7 +60,7 @@
     "about"       => [
       "pk"        => "id",
       "columns"   => ["id", "data"],
-      "RETURNING" => ["id", "data"],
+      "returning" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
       "float"     => [],
@@ -71,7 +71,7 @@
     "background"  => [
       "pk"        => "id",
       "columns"   => ["id", "data"],
-      "RETURNING" => ["id", "data"],
+      "returning" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
       "float"     => [],
@@ -82,7 +82,7 @@
     "contact"     => [
       "pk"        => "id",
       "columns"   => ["id", "data"],
-      "RETURNING" => ["id", "data"],
+      "returning" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
       "float"     => [],
@@ -93,7 +93,7 @@
     "logo"        => [
       "pk"        => "id",
       "columns"   => ["id", "data"],
-      "RETURNING" => ["id", "data"],
+      "returning" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
       "float"     => [],
@@ -104,7 +104,7 @@
     // "media"       => [
     //   "pk"        => "id",
     //   "columns"   => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
-    //   "RETURNING" => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
+    //   "returning" => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
     //   "JSON"      => [],
     //   "int"       => ["id", "size"],
     //   "bool"      => []
@@ -112,7 +112,7 @@
     "social"      => [
       "pk"        => "id",
       "columns"   => ["id", "data"],
-      "RETURNING" => ["id", "data"],
+      "returning" => ["id", "data"],
       "JSON"      => ["data"],
       "int"       => ["id"],
       "float"     => [],
@@ -123,7 +123,7 @@
     "users"       => [
       "pk"        => "user_id",
       "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_type", "user_status"],
-      "RETURNING" => ["user_id", "user_full_name", "user_username", "user_type", "user_status"],
+      "returning" => ["user_id", "user_full_name", "user_username", "user_type", "user_status"],
       "JSON"      => [],
       "int"       => ["user_id"],
       "float"     => [],
