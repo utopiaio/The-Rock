@@ -16,7 +16,7 @@
   const SALT = "canYouSmellWhatTheRockIsCooking";
 
   // JWT
-  const JWT_REQ_HEADER = "X-Access-Token";
+  const JWT_HEADER = "X-Access-Token";
   const JWT_KEY = "canYouSmellWhatTheRockIsCooking";
   const JWT_ISS = "The Rock";
   const JWT_IAT = "now";
@@ -35,7 +35,7 @@
   // CORS
   const CORS_WHITE_LIST = ["*", "rock.io", "foo.com"];
   const CORS_METHODS = ["GET", "POST", "PUT", "DELETE"];
-  const CORS_HEADERS = ["accept", "content-type", JWT_REQ_HEADER];
+  const CORS_HEADERS = ["accept", "content-type", JWT_HEADER];
   const CORS_MAX_AGE = "86400";
 
   // requests that require authentication

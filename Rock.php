@@ -7,9 +7,9 @@
       $app = \Slim\Slim::getInstance();
       $request = $app->request;
 
-      if(isset($request->headers[\Config\JWT_REQ_HEADER])) {
+      if(isset($request->headers[\Config\JWT_HEADER])) {
         try {
-          $decoded = (array)JWT::decode($request->headers["X-Access-Token"], \Config\JWT_KEY, ["HS256"]);
+          $decoded = (array)JWT::decode($request->headers[\Config\JWT_HEADER], \Config\JWT_KEY, ["HS256"]);
         } catch(Exception $e) {
           Util::halt("unauthorized, please login", 401);
         }
