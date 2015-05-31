@@ -4,7 +4,7 @@
    *
    * @author    Moe Szyslak <moe.duffdude@gmail.com>
    * @version   0.0.1
-   * @package   The Rock
+   * @package   Deez Nuts
    */
 
   namespace Config;
@@ -35,7 +35,7 @@
   // CORS
   const CORS_WHITE_LIST = ["*", "rock.io", "foo.com"];
   const CORS_METHODS = ["GET", "POST", "PUT", "DELETE"];
-  const CORS_HEADERS = ["accept", "content-type", JWT_HEADER];
+  const CORS_HEADERS = ["Accept", "Content-Type", JWT_HEADER];
   const CORS_MAX_AGE = "86400";
 
   // requests that require authentication
