@@ -76,7 +76,7 @@
     $origin = $app->request->headers["Origin"];
     $origin_stripped = preg_replace("/https?:\/\/|www\./", "", $origin);
 
-    if(in_array("*", \Config\CORS_WHITE_LIST)  === true) {
+    if(in_array("*", \Config\CORS_WHITE_LIST) === true) {
       $response->headers->set("Access-Control-Allow-Origin", "*");
       $response->headers->set("Access-Control-Allow-Methods", implode(", ", \Config\CORS_METHODS));
       $response->headers->set("Access-Control-Allow-Headers", implode(", ", \Config\CORS_HEADERS));
