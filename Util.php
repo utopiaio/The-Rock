@@ -3,10 +3,10 @@
     /**
      * generates random string
      *
-     * @param integer $length the length of the string to be returned
+     * @param integer $length - the length of the string to be returned
      * @return string
      */
-    public static function generate_token($length) {
+    public static function random_string($length) {
       $seed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       $size = strlen($seed) - 1;
       $str = "";
@@ -21,7 +21,7 @@
 
 
     /**
-     * given a JSON representation of a JSON string, returns an associative array
+     * given a JSON representation of a string, returns an associative array
      * representation of it
      *
      * @param string $body
