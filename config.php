@@ -21,7 +21,7 @@
   const JWT_ISS = "The Rock";
   const JWT_IAT = "now";
 
-  // Slim
+  // Slim + The Rock
   const DEBUG = false;
   const ROCK_DEBUG = true;
 
