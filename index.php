@@ -27,7 +27,7 @@
       Util::halt("bad request, check the payload and try again", 400);
     }
 
-    Rock::authenticate(strtolower($body["username"]), $body["password"]);
+    Rock::authenticate($body["username"], $body["password"]);
   });
 
   // generic CRUD mapper

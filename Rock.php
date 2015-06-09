@@ -2,6 +2,8 @@
   class Rock {
     /**
      * checks jwt and authenticates or halts execution
+     *
+     * @return array - authenticated user info or an empty array if user isn't authenticated
      */
     public static function authenticated() {
       $app = \Slim\Slim::getInstance();
@@ -27,11 +29,20 @@
         else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_status"] === "f") {
           Util::halt("unauthorized, account has been suspended", 401);
         }
+
+        else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_status"] === "t") {
+          $user = pg_fetch_all($result)[0];
+          $user["user_status"] = true;
+
+          return $user;
+        }
       }
 
       else {
         Util::halt("unauthorized, please login", 401);
       }
+
+      return [];
     }
 
 
@@ -44,6 +55,7 @@
      * @param string $password - raw password
      */
     public static function authenticate($username, $password) {
+      $username = strtolower($username);
       $password = Util::hash($password);
       $params = [$username, $password, "ADMINISTRATOR"];
       $query = "SELECT ". implode(", ", \Config\TABLES["users"]["returning"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE user_username=$1 AND user_password=$2 AND user_type=$3;";
