@@ -1,2 +1,3 @@
 lib/Slim
 lib/jwt
+*.paw
