@@ -3,46 +3,50 @@
     /**
      * checks jwt and authenticates or halts execution
      *
-     * @return array - authenticated user info or an empty array if user isn't authenticated
+     * @param string $role - user role to match against
+     * @return array - user info from db
      */
-    public static function authenticated() {
+    public static function authenticated($role = null) {
       $app = \Slim\Slim::getInstance();
       $request = $app->request;
 
-      if(isset($request->headers[\Config\JWT_HEADER])) {
+      if(isset($request->headers[CONFIG\JWT_HEADER])) {
         try {
-          $decoded = (array)JWT::decode($request->headers[\Config\JWT_HEADER], \Config\JWT_KEY, ["HS256"]);
+          $decoded = (array)JWT::decode($request->headers[CONFIG\JWT_HEADER], CONFIG\JWT_KEY, ["HS256"]);
         } catch(Exception $e) {
-          Util::halt("unauthorized, please login", 401);
+          Util::halt(401, "invalid authorization token");
         }
 
         $params = [$decoded["id"]];
-        $query = "SELECT ". implode(", ", \Config\TABLES["users"]["returning"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE ". \Config\TABLES["users"]["pk"] ."=$1;";
+        $query = "SELECT ". implode(", ", CONFIG\TABLES["users"]["returning"]) ." FROM ". CONFIG\TABLE_PREFIX ."users WHERE ". CONFIG\TABLES["users"]["pk"] ."=$1;";
         $result = pg_query_params($query, $params);
 
-        // user doesn't exist
         if(pg_affected_rows($result) === 0) {
-          Util::halt("unauthorized, please login", 401);
+          Util::halt(401, "token no longer valid");
         }
 
-        // user has been suspended
-        else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_status"] === "f") {
-          Util::halt("unauthorized, account has been suspended", 401);
-        }
+        else if(pg_affected_rows($result) === 1) {
+          $user = Moedoo::cast("users", pg_fetch_all($result))[0];
 
-        else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_status"] === "t") {
-          $user = pg_fetch_all($result)[0];
-          $user["user_status"] = true;
+          if($user["user_status"] === false) {
+            Util::halt(401, "account has been suspended");
+          }
 
-          return $user;
+          else {
+            if($role === null || $role === $user["user_type"]) {
+              return $user;
+            }
+
+            else {
+              Util::halt(401, "role mismatch");
+            }
+          }
         }
       }
 
       else {
-        Util::halt("unauthorized, please login", 401);
+        Util::halt(401, "missing authentication header `". CONFIG\JWT_HEADER ."`");
       }
-
-      return [];
     }
 
 
@@ -56,40 +60,38 @@
      */
     public static function authenticate($username, $password) {
       $username = strtolower($username);
+      $username = preg_replace("/ /", "_", $username);
       $password = Util::hash($password);
-      $params = [$username, $password, "ADMINISTRATOR"];
-      $query = "SELECT ". implode(", ", \Config\TABLES["users"]["returning"]) ." FROM ". \Config\TABLE_PREFIX ."users WHERE user_username=$1 AND user_password=$2 AND user_type=$3;";
+      $params = [$username, $password];
+      $query = "SELECT ". implode(", ", CONFIG\TABLES["users"]["returning"]) ." FROM ". CONFIG\TABLE_PREFIX ."users WHERE user_username=$1 AND user_password=$2;";
       $result = pg_query_params($query, $params);
 
       // straight up, unauthorized
       if(pg_affected_rows($result) === 0) {
-        Util::JSON(["error" => "unauthorized"], 401);
+        Util::halt(401, "wrong username and/or password");
       }
 
-      // user account exists but it's suspended
-      else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_status"] === "f") {
-        Util::JSON(["error" => "account has been suspended, contact system administrator"], 403);
-      }
+      else if(pg_affected_rows($result) === 1) {
+        $user = Moedoo::cast("users", pg_fetch_all($result))[0];
 
-      // proceed with authentication
-      // building JWT...
-      else if(pg_affected_rows($result) === 1 && pg_fetch_all($result)[0]["user_status"] === "t") {
-        $user = pg_fetch_all($result)[0];
-        $user["user_status"] = true;
+        // user account has been suspended
+        if($user["user_status"] === false) {
+          Util::halt(401, "account has been suspended");
+        }
 
-        $token = [
-          "iss" => \Config\JWT_ISS,
-          "iat" => strtotime(\Config\JWT_IAT),
-          "id" => $user["user_id"]
-        ];
+        // all good, proceeding with authentication...
+        else {
+          $token = [
+            "iss" => CONFIG\JWT_ISS,
+            "iat" => strtotime(CONFIG\JWT_IAT),
+            "id" => $user["user_id"]
+          ];
 
-        $jwt = JWT::encode($token, \Config\JWT_KEY);
-        Util::JSON(["jwt" => $jwt, "info" => $user]);
-      }
-
-      // something horrible has happened
-      else {
-        Util::JSON(["error" => "ouch, that hurt"], 500);
+          // TODO
+          // make a fingerprint so that the token stays locked-down
+          $jwt = JWT::encode($token, CONFIG\JWT_KEY);
+          Util::JSON(["jwt" => $jwt, "user" => $user]);
+        }
       }
     }
 
@@ -103,19 +105,43 @@
      *
      * @param string $method
      * @param string $table
+     * @param string $role
      */
-    public static function check($method, $table) {
-      if(array_key_exists($table, \Config\TABLES) === false) {
-        Util::halt("requested URL was not found");
+    public static function check($method, $table, $role = "ANY") {
+      if(array_key_exists($table, CONFIG\TABLES) === false) {
+        Util::halt(404, "requested resource `". $table ."` does not exist");
       }
 
-      if(in_array($table, \Config\RESTRICTED_REQUESTS[$method]) === true) {
-        Rock::authenticated();
+      if(in_array($table, CONFIG\FORBIDDEN_REQUESTS[$method]) === true) {
+        Util::halt(403, "`". $method ."` method on table `". $table ."` is forbidden");
       }
 
-      if(in_array($table, \Config\FORBIDDEN_REQUESTS[$method]) === true) {
-        Util::halt("request is forbidden", 403);
+      if(in_array($table, CONFIG\AUTH_REQUESTS[$method]) === true) {
+        $role === "ANY" ? Rock::authenticated() : Rock::authenticated($role);
       }
+    }
+
+
+
+    /**
+     * returns body after validating payload
+     *
+     * @param string $table - request body as a string
+     * @return associative array representation of the passed body
+     */
+    public static function getBody($table) {
+      $app = \Slim\Slim::getInstance();
+      $request = $app->request;
+      $body = Util::toArray($request->getBody());
+
+      // validating payload...
+      foreach($body as $column => $value) {
+        if(in_array($column, CONFIG\TABLES[$table]["columns"]) === false) {
+          Util::halt(400, "unknown column `". $column ."`");
+        }
+      }
+
+      return $body;
     }
   }
 ?>

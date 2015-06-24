@@ -6,7 +6,7 @@
      * @param integer $length - the length of the string to be returned
      * @return string
      */
-    public static function random_string($length) {
+    public static function randomString($length) {
       $seed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       $size = strlen($seed) - 1;
       $str = "";
@@ -27,11 +27,11 @@
      * @param string $body
      * @return array
      */
-    public static function to_array($body) {
+    public static function toArray($body) {
       $body = json_decode($body);
 
       if($body === null) {
-        Util::stop("bad request, check the payload and try again", 400);
+        Util::halt(400, "unable to parse body");
       }
 
       else {
@@ -48,33 +48,12 @@
 
 
     /**
-     * given table and a payload, makes sure the data is in accordance with
-     * `config` file --- if anything "suspicious" is detected - execution is stopped
-     *
-     * @param string $table
-     * @param payload
-     */
-    public static function validate_payload($table, $payload) {
-      if(is_null($payload) === true) {
-        Util::halt("bad request, check the payload and try again", 400);
-      }
-
-      foreach($payload as $key => $value) {
-        if(in_array($key, \Config\TABLES[$table]["columns"]) === false) {
-          Util::halt("bad request, check the payload and try again", 400);
-        }
-      }
-    }
-
-
-
-    /**
      * given an array and status code it'll return a JSON response
      *
      * @param array $data
      * @param integer $status
      */
-    public static function JSON($data, $status = 202) {
+    public static function JSON($data, $status = 200) {
       $app = \Slim\Slim::getInstance();
       $response = $app->response;
       $response->setStatus($status);
@@ -91,9 +70,9 @@
      * @return string
      */
     public static function hash($string) {
-      $hash = hash_init(\Config\HASH);
+      $hash = hash_init(CONFIG\HASH);
       hash_update($hash, $string);
-      hash_update($hash, \Config\SALT);
+      hash_update($hash, CONFIG\SALT);
 
       return hash_final($hash);
     }
@@ -104,13 +83,15 @@
      * "destroys" the app
      * sends one LAST message before halting
      *
+     * @param integer $status
      * @param string $message - message to be sent back with `error` property
      */
-    public static function halt($message, $status = 403) {
+    public static function halt($status = 401, $message = null) {
       $app = \Slim\Slim::getInstance();
       $response = $app->response;
       $response->headers->set("Content-Type", "application/json;charset=utf-8");
-      $app->halt($status, json_encode(["error" => $message]));
+
+      $message === null ? $app->halt($status) : $app->halt($status, json_encode(["error" => $message]));
     }
   }
 ?>

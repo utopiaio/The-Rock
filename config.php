@@ -7,7 +7,7 @@
    * @package   Deez Nuts
    */
 
-  namespace Config;
+  namespace CONFIG;
 
   date_default_timezone_set("Africa/Addis_Ababa");
 
@@ -25,7 +25,11 @@
   const DEBUG = false;
   const ROCK_DEBUG = true;
 
-  // database connection string
+  // S3
+  const S3_UPLOAD_DIR = "__S3__";
+  const S3_UPLOAD_URL = "@S3";
+
+  // database
   const DB_HOST = "localhost";
   const DB_USER = "moe";
   const DB_PASSWORD = "\"\"";
@@ -35,101 +39,85 @@
   // CORS
   const CORS_WHITE_LIST = ["*", "rock.io", "foo.com"];
   const CORS_METHODS = ["GET", "POST", "PUT", "DELETE"];
-  const CORS_HEADERS = ["Accept", "Content-Type", JWT_HEADER];
+  const CORS_HEADERS = ["Accept", "Content-Type", "Content-Range", "Content-Disposition", JWT_HEADER];
   const CORS_MAX_AGE = "86400";
 
   // requests that require authentication
-  // + `administration` user role is required
-  const RESTRICTED_REQUESTS = [
-    "GET"     => ["users"],
-    "POST"    => ["users"],
-    "PUT"     => ["about", "background", "contact", "logo", "social", "users"],
-    "DELETE"  => ["users"]
+  const AUTH_REQUESTS = [
+    "GET"     => [],
+    "POST"    => [],
+    "PUT"     => ["about", "social"],
+    "DELETE"  => []
   ];
 
-  // request that are NOT allowed --- period
+  // request that are NOT allowed
   const FORBIDDEN_REQUESTS = [
     "GET"     => [],
-    "POST"    => ["about", "background", "contact", "logo"],
+    "POST"    => ["about"],
     "PUT"     => [],
-    "DELETE"  => ["about", "background", "contact"]
+    "DELETE"  => ["about"]
   ];
 
   // Moedoo will construct queries based on this configurations
   const TABLES = [
     "about"       => [
       "pk"        => "id",
-      "columns"   => ["id", "data"],
-      "returning" => ["id", "data"],
+      "columns"   => ["id", "data", "creator", "social"],
+      "returning" => ["id", "data", "creator", "social"],
       "JSON"      => ["data"],
-      "int"       => ["id"],
-      "float"     => [],
-      "double"    => [],
-      "bool"      => [],
-      "search"    => ["data"]
+      "int"       => ["id", "creator", "social"],
+      "search"    => ["data"],
+      "fk"        => [
+        "creator" => ["table" => "users", "references" => "user_id"],
+        "social"  => ["table" => "social", "references" => "id"]
+      ]
     ],
-    "background"  => [
+    "s3"          => [
       "pk"        => "id",
-      "columns"   => ["id", "data"],
-      "returning" => ["id", "data"],
-      "JSON"      => ["data"],
-      "int"       => ["id"],
-      "float"     => [],
-      "double"    => [],
-      "bool"      => [],
-      "search"    => ["data"]
+      "columns"   => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
+      "returning" => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
+      "int"       => ["id", "size"],
     ],
-    "contact"     => [
-      "pk"        => "id",
-      "columns"   => ["id", "data"],
-      "returning" => ["id", "data"],
-      "JSON"      => ["data"],
-      "int"       => ["id"],
-      "float"     => [],
-      "double"    => [],
-      "bool"      => [],
-      "search"    => ["data"]
-    ],
-    "logo"        => [
-      "pk"        => "id",
-      "columns"   => ["id", "data"],
-      "returning" => ["id", "data"],
-      "JSON"      => ["data"],
-      "int"       => ["id"],
-      "float"     => [],
-      "double"    => [],
-      "bool"      => [],
-      "search"    => ["data"]
-    ],
-    // "media"       => [
-    //   "pk"        => "id",
-    //   "columns"   => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
-    //   "returning" => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
-    //   "JSON"      => [],
-    //   "int"       => ["id", "size"],
-    //   "bool"      => []
-    // ],
     "social"      => [
       "pk"        => "id",
-      "columns"   => ["id", "data"],
-      "returning" => ["id", "data"],
+      "columns"   => ["id", "data", "users"],
+      "returning" => ["id", "data", "users"],
       "JSON"      => ["data"],
+      "int"       => ["id", "users"],
+      "search"    => ["data"],
+      "fk"        => [
+        "users" => ["table" => "users", "references" => "user_id"]
+      ]
+    ],
+    "story"       => [
+      "pk"        => "id",
+      "columns"   => ["id", "story", "by", "tags"],
+      "returning" => ["id", "story", "by", "tags"],
+      "int"       => ["id", "by"],
+      "intArray"  => ["tags"],
+      "search"    => ["story"],
+      "fk"        => [
+        "by" => ["table" => "users", "references" => "user_id"],
+      ],
+      "map" => [
+        "tags" => ["table" => "tags", "references" => "id"]
+      ]
+    ],
+    "tags"        => [
+      "pk"        => "id",
+      "columns"   => ["id", "tag"],
+      "returning" => ["id", "tag"],
       "int"       => ["id"],
-      "float"     => [],
-      "double"    => [],
-      "bool"      => [],
-      "search"    => ["data"]
+      "search"    => ["tag"],
+      "fk"        => []
     ],
     "users"       => [
       "pk"        => "user_id",
       "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_type", "user_status"],
       "returning" => ["user_id", "user_full_name", "user_username", "user_type", "user_status"],
-      "JSON"      => [],
       "int"       => ["user_id"],
-      "float"     => [],
-      "double"    => [],
       "bool"      => ["user_status"],
-      "search"    => ["user_full_name", "user_username", "user_type"]
+      "search"    => ["user_full_name", "user_username", "user_type"],
     ]
   ];
 ?>
