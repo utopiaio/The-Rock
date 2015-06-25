@@ -3,92 +3,79 @@
     /**
      * returns a FK reference
      *
-     * EXCEPTION CODES
-     * -1: deadlock
-     *
      * @param string $table
      * @param array $rows
-     * @param array $deadlockPool
+     * @param array $depth
      * @return array
      */
-    private static function referenceFk($table, $rows, &$deadlockPool = []) {
-      // checking deadlock...
-      if(count($deadlockPool) === 0) {
-        foreach($rows as $index => $row) {
-          array_push($deadlockPool, $table .".". CONFIG\TABLES[$table]["pk"] .".". $row[CONFIG\TABLES[$table]["pk"]]);
+    private static function referenceFk($table, $rows, &$depth = 1) {
+      if($depth > 0 || $depth === -1) {
+        if($depth > 0) {
+          $depth--;
         }
-      }
 
-      else {
-        foreach($rows as $index => $row) {
-          if(in_array($table .".". CONFIG\TABLES[$table]["pk"] .".". $row[CONFIG\TABLES[$table]["pk"]], $deadlockPool) === true) {
-            throw new Exception("deadlock", -1);
+        $referenced = []; // caches referenced values so db hit is minimal
+
+        if(array_key_exists("fk", CONFIG\TABLES[$table]) === true) {
+          foreach(CONFIG\TABLES[$table]["fk"] as $column => $referenceRule) {
+            foreach($rows as $index => &$row) {
+              if($row[$column] !== null) {
+                if(array_key_exists($row[$column], $referenced) === true) {
+                  $row[$column] = $referenced[$row[$column]];
+                }
+
+                else {
+                  $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $row[$column]], null, $depth);
+
+                  if(count($referencedRow) === 1) {
+                    $referenced[$row[$column]] = $referencedRow[0];
+                    $row[$column] = $referencedRow[0];
+                  }
+
+                  else {
+                    $referenced[$row[$column]] = null;
+                    $row[$column] = null;
+                  }
+                }
+              }
+            }
           }
         }
-      }
-      // checking deadlock: end
 
-      $referenced = []; // caches referenced values so db hit is minimal
+        if(array_key_exists("map", CONFIG\TABLES[$table]) === true) {
+          $mapped = []; // caches referenced values so db hit is minimal
 
-      if(array_key_exists("fk", CONFIG\TABLES[$table]) === true) {
-        foreach(CONFIG\TABLES[$table]["fk"] as $column => $referenceRule) {
           foreach($rows as $index => &$row) {
-            if($row[$column] !== null) {
-              if(array_key_exists($row[$column], $referenced) === true) {
-                $row[$column] = $referenced[$row[$column]];
-              }
+            $map = [];
 
-              else {
-                $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $row[$column]], null, $deadlockPool);
-
-                if(count($referencedRow) === 1) {
-                  $referenced[$row[$column]] = $referencedRow[0];
-                  $row[$column] = $referencedRow[0];
+            foreach(CONFIG\TABLES[$table]["map"] as $column => $rule) {
+              // O^3 --- there's no turning back now
+              // -1 is used as a flag to skip mapping
+              // i.e. non existing references will simply "vanish" --- now that's
+              // what i call INTEGRITY
+              foreach($row[$column] as $index => $value) {
+                if(array_key_exists($value, $mapped) === true) {
+                  if($mapped[$value] !== -1) {
+                    array_push($map, $mapped[$value]);
+                  }
                 }
 
                 else {
-                  $referenced[$row[$column]] = null;
-                  $row[$column] = null;
+                  $referencedRow = Moedoo::select($rule["table"], [$rule["references"] => $value], null, $depth);
+
+                  if(count($referencedRow) === 1) {
+                    $mapped[$value] = $referencedRow[0];
+                    array_push($map, $referencedRow[0]);
+                  }
+
+                  else {
+                    $mapped[$value] = -1;
+                  }
                 }
               }
+
+              $row[$column] = $map;
             }
-          }
-        }
-      }
-
-      if(array_key_exists("map", CONFIG\TABLES[$table]) === true) {
-        $mapped = []; // caches referenced values so db hit is minimal
-
-        foreach($rows as $index => &$row) {
-          $map = [];
-
-          foreach(CONFIG\TABLES[$table]["map"] as $column => $rule) {
-            // O^3 --- there's no turning back now
-            // -1 is used as a flag to skip mapping
-            // i.e. non existing references will simply "vanish" --- now that's
-            // what i call INTEGRITY
-            foreach($row[$column] as $index => $value) {
-              if(array_key_exists($value, $mapped) === true) {
-                if($mapped[$value] !== -1) {
-                  array_push($map, $mapped[$value]);
-                }
-              }
-
-              else {
-                $referencedRow = Moedoo::select($rule["table"], [$rule["references"] => $value], null, $deadlockPool);
-
-                if(count($referencedRow) === 1) {
-                  $mapped[$value] = $referencedRow[0];
-                  array_push($map, $referencedRow[0]);
-                }
-
-                else {
-                  $mapped[$value] = -1;
-                }
-              }
-            }
-
-            $row[$column] = $map;
           }
         }
       }
@@ -254,16 +241,13 @@
     /**
      * executes SELECT command on a given table
      *
-     * EXCEPTION CODES
-     * -1: deadlock
-     *
      * @param string $table - table to operate select command on
      * @param array $and - concatenated with `AND`
      * @param array $or - concatenated with `OR`
-     * @param array $deadlockPool
+     * @param array $depth - -1 implies FULL depth [not recommended]
      * @return affected rows or null if an error occurred
      */
-    public static function select($table, $and = null, $or = null, &$deadlockPool = []) {
+    public static function select($table, $and = null, $or = null, &$depth = 1) {
       $columns = implode(", ", CONFIG\TABLES[$table]["returning"]);
       $query = "SELECT {$columns} FROM ". CONFIG\TABLE_PREFIX ."{$table}";
       $params = [];
@@ -314,7 +298,7 @@
 
       else {
         $rows = Moedoo::cast($table, pg_fetch_all($result));
-        $rows = Moedoo::referenceFk($table, $rows, $deadlockPool);
+        $rows = Moedoo::referenceFk($table, $rows, $depth);
         return $rows;
       }
     }
