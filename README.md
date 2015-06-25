@@ -27,10 +27,10 @@ Util::halt($status, $message) // halts execution
 ```php
 Moedoo::cast($table, $rows) // returns appropriately casted values
 Moedoo::db($host, $port, $user, $password, $dbname) // returns db resource
-Moedoo::search($table, $q) // perform full-text search on table
-Moedoo::select($table, $and, $or) // performs `select` operation
-Moedoo::insert($table, $data) // performs `insert` operation
-Moedoo::update($table, $data, $id) // performs `update` operation
+Moedoo::search($table, $q, $depth) // perform full-text search on table
+Moedoo::select($table, $and, $or, $depth) // performs `select` operation
+Moedoo::insert($table, $data, $depth) // performs `insert` operation
+Moedoo::update($table, $data, $id, $depth) // performs `update` operation
 Moedoo::delete($table, $id) // performs `delete` operation
 ```
 

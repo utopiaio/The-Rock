@@ -202,7 +202,7 @@
      * @param string $table
      * @param string $query
      */
-    public static function search($table, $q) {
+    public static function search($table, $q, $depth = 1) {
       $columns = implode(", ", CONFIG\TABLES[$table]["returning"]);
       $q = preg_replace("/ +/", "|", trim($q));
       $q = preg_replace("/ /", "|", $q);
@@ -231,7 +231,7 @@
 
       else {
         $rows = Moedoo::cast($table, pg_fetch_all($result));
-        $rows = Moedoo::referenceFk($table, $rows);
+        $rows = Moedoo::referenceFk($table, $rows, $depth);
         return $rows;
       }
     }
@@ -317,7 +317,7 @@
      * @param array $data - data to be inserted
      * @return array - the newly inserted row
      */
-    public static function insert($table, $data) {
+    public static function insert($table, $data, $depth = 1) {
       $data = Moedoo::castForPg($table, $data);
       $count = 1;
       $columns = [];
@@ -342,7 +342,7 @@
 
         if(pg_affected_rows($result) === 1) {
           $rows = Moedoo::cast($table, pg_fetch_all($result));
-          $rows = Moedoo::referenceFk($table, $rows);
+          $rows = Moedoo::referenceFk($table, $rows, $depth);
           return $rows[0];
         }
 
@@ -380,7 +380,7 @@
      * @param array $data - data which to replace on
      * @return array | null
      */
-    public static function update($table, $data, $id) {
+    public static function update($table, $data, $id, $depth = 1) {
       $data = Moedoo::castForPg($table, $data);
       $count = 1;
       $set = [];
@@ -409,7 +409,7 @@
         // everything went as expected
         else if(pg_affected_rows($result) === 1) {
           $rows = Moedoo::cast($table, pg_fetch_all($result));
-          $rows = Moedoo::referenceFk($table, $rows);
+          $rows = Moedoo::referenceFk($table, $rows, $depth);
           return $rows[0];
         }
       } catch(Exception $e) {
