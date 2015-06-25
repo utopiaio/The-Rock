@@ -3,13 +3,31 @@
     /**
      * returns a FK reference
      *
+     * EXCEPTION CODES
+     * -1: deadlock
+     *
      * @param string $table
      * @param array $rows
      * @param array $deadlockPool
      * @return array
      */
     private static function referenceFk($table, $rows, &$deadlockPool = []) {
-      array_push($deadlockPool, $table);
+      // checking deadlock...
+      if(count($deadlockPool) === 0) {
+        foreach($rows as $index => $row) {
+          array_push($deadlockPool, $table .".". CONFIG\TABLES[$table]["pk"] .".". $row[CONFIG\TABLES[$table]["pk"]]);
+        }
+      }
+
+      else {
+        foreach($rows as $index => $row) {
+          if(in_array($table .".". CONFIG\TABLES[$table]["pk"] .".". $row[CONFIG\TABLES[$table]["pk"]], $deadlockPool) === true) {
+            throw new Exception("deadlock", -1);
+          }
+        }
+      }
+      // checking deadlock: end
+
       $referenced = []; // caches referenced values so db hit is minimal
 
       if(array_key_exists("fk", CONFIG\TABLES[$table]) === true) {
@@ -246,10 +264,6 @@
      * @return affected rows or null if an error occurred
      */
     public static function select($table, $and = null, $or = null, &$deadlockPool = []) {
-      if(count($deadlockPool) > 0 && $deadlockPool[0] === $table) {
-        throw new Exception("deadlock", -1);
-      }
-
       $columns = implode(", ", CONFIG\TABLES[$table]["returning"]);
       $query = "SELECT {$columns} FROM ". CONFIG\TABLE_PREFIX ."{$table}";
       $params = [];
