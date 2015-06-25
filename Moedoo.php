@@ -57,7 +57,7 @@
               }
 
               else {
-                $referencedRow = Moedoo::select($rule["table"], [$rule["references"] => $value]);
+                $referencedRow = Moedoo::select($rule["table"], [$rule["references"] => $value], null, $deadlockPool);
 
                 if(count($referencedRow) === 1) {
                   $mapped[$value] = $referencedRow[0];
