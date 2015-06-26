@@ -218,7 +218,7 @@
         header("Access-Control-Allow-Methods: ". implode(", ", CONFIG\CORS_METHODS));
         header("Access-Control-Allow-Headers: ". implode(", ", CONFIG\CORS_HEADERS));
         header("Access-Control-Allow-Credentials: true");
-        header("Access-Control-Max-Age:". CONFIG\CORS_MAX_AGE);
+        header("Access-Control-Max-Age: ". CONFIG\CORS_MAX_AGE);
       }
 
       else {
