@@ -8,7 +8,7 @@ as it's SPECIFICALLY designed to work on shared hosting all you need is
 - PHP5+
 - PG database 8+
 
-###the kitchen sink
+###The kitchen sink
 three musketeers `Util`, `Moedoo` and `Rock` form `The Rock`
 - Util: utility functions
 - Moedoo: basic PG DB "engine"
@@ -42,8 +42,11 @@ Rock::check($method, $table, $role) // runs security checks via `config`
 Rock::getBody($table) // validates and returns request body
 ```
 
-###why PHP
+###Why PHP
 i don't have a choice, PHP is the only thing i can afford to host on a "production" scale
+
+###License
+MIT
 
 ###Contribution
 any contribution is welcome!
