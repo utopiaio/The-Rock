@@ -17,16 +17,11 @@
           Util::halt(401, "invalid authorization token");
         }
 
-        $params = [$decoded["id"]];
-        $query = "SELECT ". implode(", ", CONFIG\TABLES["users"]["returning"]) ." FROM ". CONFIG\TABLE_PREFIX ."users WHERE ". CONFIG\TABLES["users"]["pk"] ."=$1;";
-        $result = pg_query_params($query, $params);
+        $depth = 0;
+        $result = Moedoo::select("users", [CONFIG\TABLES["users"]["pk"] => $decoded["id"]], null, $depth);
 
-        if(pg_affected_rows($result) === 0) {
-          Util::halt(401, "token no longer valid");
-        }
-
-        else if(pg_affected_rows($result) === 1) {
-          $user = Moedoo::cast("users", pg_fetch_all($result))[0];
+        if(count($result) === 1) {
+          $user = $result[0];
 
           if($user["user_status"] === false) {
             Util::halt(401, "account has been suspended");
@@ -41,6 +36,10 @@
               Util::halt(401, "role mismatch");
             }
           }
+        }
+
+        else {
+          Util::halt(401, "token no longer valid");
         }
       }
 
@@ -62,17 +61,10 @@
       $username = strtolower($username);
       $username = preg_replace("/ /", "_", $username);
       $password = Util::hash($password);
-      $params = [$username, $password];
-      $query = "SELECT ". implode(", ", CONFIG\TABLES["users"]["returning"]) ." FROM ". CONFIG\TABLE_PREFIX ."users WHERE user_username=$1 AND user_password=$2;";
-      $result = pg_query_params($query, $params);
+      $result = Moedoo::select("users", ["user_username" => $username, "user_password" => $password]);
 
-      // straight up, unauthorized
-      if(pg_affected_rows($result) === 0) {
-        Util::halt(401, "wrong username and/or password");
-      }
-
-      else if(pg_affected_rows($result) === 1) {
-        $user = Moedoo::cast("users", pg_fetch_all($result))[0];
+      if(count($result) === 1) {
+        $user = $result[0];
 
         // user account has been suspended
         if($user["user_status"] === false) {
@@ -92,6 +84,10 @@
           $jwt = JWT::encode($token, CONFIG\JWT_KEY);
           Util::JSON(["jwt" => $jwt, "user" => $user]);
         }
+      }
+
+      else {
+        Util::halt(401, "wrong username and/or password");
       }
     }
 
