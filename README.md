@@ -5,7 +5,7 @@ Most of the REST API is controlled via `config.php` --- I'll try to make a wiki 
 
 ###Requirements
 as it's SPECIFICALLY designed to work on shared hosting all you need is
-- PHP5+
+- PHP5.4+
 - PG database 8+
 
 ###The kitchen sink
@@ -18,9 +18,6 @@ three musketeers `Util`, `Moedoo` and `Rock` form `The Rock`
 ```php
 Util::randomString($length) // returns a random string with length of `$length`
 Util::toArray($body) // returns an associative array of a VALID body string
-Util::JSON($data, $status) // return a JSON encoded response
-Util::hash($string) // returns the hash (set via `config.php`) of the string
-Util::halt($status, $message) // halts execution
 ```
 
 ####Moedoo
@@ -40,6 +37,11 @@ Rock::authenticated($role) // authenticates the JWT
 Rock::authenticate($username, $password) // authenticates and returns JWT
 Rock::check($method, $table, $role) // runs security checks via `config`
 Rock::getBody($table) // validates and returns request body
+Rock::JSON($data, $status) // returns JSON
+Rock::halt($status, $message) // halts execution
+Rock::hash($string) // returns the hash (set via `config.php`) of the string
+Rock::getHeaders() // returns request headers
+Rock::getUrl() // returns URL
 ```
 
 ###Why PHP
