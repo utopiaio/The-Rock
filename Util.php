@@ -1,5 +1,50 @@
 <?php
   Class Util {
+    public static $codes = [
+      200 => 'OK',
+      201 => 'Created',
+      202 => 'Accepted',
+      203 => 'Non-Authoritative Information',
+      204 => 'No Content',
+      205 => 'Reset Content',
+      206 => 'Partial Content',
+
+      300 => 'Multiple Choices',
+      301 => 'Moved Permanently',
+      302 => 'Found',
+      303 => 'See Other',
+      304 => 'Not Modified',
+      305 => 'Use Proxy',
+      307 => 'Temporary Redirect',
+
+      400 => 'Bad Request',
+      401 => 'Unauthorized',
+      403 => 'Forbidden',
+      404 => 'Not Found',
+      405 => 'Method Not Allowed',
+      406 => 'Not Acceptable',
+      407 => 'Proxy Authentication Required',
+      408 => 'Request Timeout',
+      409 => 'Conflict',
+      410 => 'Gone',
+      411 => 'Length Required',
+      412 => 'Precondition Failed',
+      413 => 'Request Entity Too Large',
+      414 => 'Request-URI Too Long',
+      415 => 'Unsupported Media Type',
+      416 => 'Requested Range Not Satisfiable',
+      417 => 'Expectation Failed',
+
+      500 => 'Internal Server Error',
+      501 => 'Not Implemented',
+      502 => 'Bad Gateway',
+      503 => 'Service Unavailable',
+      504 => 'Gateway Timeout',
+      505 => 'HTTP Version Not Supported'
+    ];
+
+
+
     /**
      * generates random string
      *
@@ -43,55 +88,6 @@
 
         return $array;
       }
-    }
-
-
-
-    /**
-     * given an array and status code it'll return a JSON response
-     *
-     * @param array $data
-     * @param integer $status
-     */
-    public static function JSON($data, $status = 200) {
-      $app = \Slim\Slim::getInstance();
-      $response = $app->response;
-      $response->setStatus($status);
-      $response->headers->set("Content-Type", "application/json;charset=utf-8");
-      $response->setBody(json_encode($data));
-    }
-
-
-
-    /**
-     * given a string it'll return the hashed form
-     *
-     * @param string $string
-     * @return string
-     */
-    public static function hash($string) {
-      $hash = hash_init(CONFIG\HASH);
-      hash_update($hash, $string);
-      hash_update($hash, CONFIG\SALT);
-
-      return hash_final($hash);
-    }
-
-
-
-    /**
-     * "destroys" the app
-     * sends one LAST message before halting
-     *
-     * @param integer $status
-     * @param string $message - message to be sent back with `error` property
-     */
-    public static function halt($status = 401, $message = null) {
-      $app = \Slim\Slim::getInstance();
-      $response = $app->response;
-      $response->headers->set("Content-Type", "application/json;charset=utf-8");
-
-      $message === null ? $app->halt($status) : $app->halt($status, json_encode(["error" => $message]));
     }
   }
 ?>

@@ -21,10 +21,6 @@
   const JWT_ISS = "The Rock";
   const JWT_IAT = "now";
 
-  // Slim + The Rock
-  const DEBUG = false;
-  const ROCK_DEBUG = true;
-
   // S3
   const S3_UPLOAD_DIR = "__S3__";
   const S3_UPLOAD_URL = "@S3";
