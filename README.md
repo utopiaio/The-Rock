@@ -1,5 +1,5 @@
 #The Rock
-a set of static helper functions added on top of [Slim](https://github.com/slimphp/Slim) that make my 9-5 life easy.
+a set of static helper functions added on top of [FastRoute](https://github.com/nikic/FastRoute) and [Pimple](https://github.com/silexphp/Pimple) that make my 9-5 life easy.
 
 Most of the REST API is controlled via `config.php` --- I'll try to make a wiki page.
 
@@ -25,10 +25,11 @@ Util::toArray($body) // returns an associative array of a VALID body string
 Moedoo::cast($table, $rows) // returns appropriately casted values
 Moedoo::db($host, $port, $user, $password, $dbname) // returns db resource
 Moedoo::search($table, $q, $depth) // perform full-text search on table
-Moedoo::select($table, $and, $or, $depth) // performs `select` operation
-Moedoo::insert($table, $data, $depth) // performs `insert` operation
-Moedoo::update($table, $data, $id, $depth) // performs `update` operation
-Moedoo::delete($table, $id) // performs `delete` operation
+Moedoo::select($table, $and, $or, $depth, $limit, $offset) // performs `select`
+Moedoo::insert($table, $data, $depth) // performs `insert`
+Moedoo::update($table, $data, $id, $depth) // performs `update`
+Moedoo::delete($table, $id) // performs `delete`
+Moedoo::count($table) // returns row count on table
 ```
 
 ####Rock
