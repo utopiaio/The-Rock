@@ -103,6 +103,7 @@
     return function($routeInfo) {
       $table = $routeInfo[2]["table"];
       $id = array_key_exists("id", $routeInfo[2]) === true ? $routeInfo[2]["id"] : -1;
+      $count = array_key_exists("count", $routeInfo[2]);
 
       switch($_SERVER["REQUEST_METHOD"]) {
         case "GET":
@@ -114,6 +115,24 @@
 
           if(isset($_GET["q"]) === true && $id === -1) {
             Rock::JSON(Moedoo::search($table, $_GET["q"]), 200);
+          }
+
+          else if($count === true) {
+            Rock::JSON([
+              "count" => Moedoo::count($routeInfo[2]["table"])
+            ]);
+          }
+
+          else if(isset($_GET["limit"]) === true && preg_match("/^\d+$/", $_GET["limit"]) === 1) {
+            $limit = $_GET["limit"];
+            $count = 0;
+            $depth = 1;
+
+            if(isset($_GET["offset"]) === true && preg_match("/^\d+$/", $_GET["offset"]) === 1) {
+              $count = $_GET["offset"];
+            }
+
+            Rock::JSON(Moedoo::select($table, null, null, $depth, $limit, $count), 200);
           }
 
           else {
