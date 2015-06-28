@@ -23,7 +23,7 @@
 
     $r->addRoute("OPTIONS", "/[{path:.+}]", "OPTIONS");
 
-    $r->addRoute("GET", "/{table}[/{id:\d+}|]", "REST");
+    $r->addRoute("GET", "/{table}[/{id:\d+}]", "REST");
     $r->addRoute("GET", "/{table}/{count:count}", "REST");
     $r->addRoute("POST", "/{table}", "REST");
     $r->addRoute("PUT", "/{table}/{id:\d+}", "REST");
