@@ -32,7 +32,7 @@
         try {
           $file = Moedoo::insert("s3", $fileData);
         } catch(Exception $e) {
-          Util::halt($e->getCode() === 1 ? 500 : 400, $e->getMessage());
+          Rock::halt($e->getCode() === 1 ? 500 : 400, $e->getMessage());
         }
       }
 
@@ -40,7 +40,7 @@
     }
 
     protected function body($str) {
-      Util::JSON(json_decode($str), 202);
+      Rock::JSON(json_decode($str), 202);
     }
   }
 ?>

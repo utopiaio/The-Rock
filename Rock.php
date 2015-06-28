@@ -7,14 +7,13 @@
      * @return array - user info from db
      */
     public static function authenticated($role = null) {
-      $app = \Slim\Slim::getInstance();
-      $request = $app->request;
+      $requestHeaders = Rock::getHeaders();
 
-      if(isset($request->headers[CONFIG\JWT_HEADER])) {
+      if(array_key_exists(CONFIG\JWT_HEADER, $requestHeaders) === true) {
         try {
-          $decoded = (array)JWT::decode($request->headers[CONFIG\JWT_HEADER], CONFIG\JWT_KEY, ["HS256"]);
+          $decoded = (array)JWT::decode($requestHeaders[CONFIG\JWT_HEADER], CONFIG\JWT_KEY, ["HS256"]);
         } catch(Exception $e) {
-          Util::halt(401, "invalid authorization token");
+          Rock::halt(401, "invalid authorization token");
         }
 
         $depth = 0;
@@ -24,7 +23,7 @@
           $user = $result[0];
 
           if($user["user_status"] === false) {
-            Util::halt(401, "account has been suspended");
+            Rock::halt(401, "account has been suspended");
           }
 
           else {
@@ -33,18 +32,18 @@
             }
 
             else {
-              Util::halt(401, "role mismatch");
+              Rock::halt(401, "role mismatch");
             }
           }
         }
 
         else {
-          Util::halt(401, "token no longer valid");
+          Rock::halt(401, "token no longer valid");
         }
       }
 
       else {
-        Util::halt(401, "missing authentication header `". CONFIG\JWT_HEADER ."`");
+        Rock::halt(401, "missing authentication header `". CONFIG\JWT_HEADER ."`");
       }
     }
 
@@ -60,7 +59,7 @@
     public static function authenticate($username, $password) {
       $username = strtolower($username);
       $username = preg_replace("/ /", "_", $username);
-      $password = Util::hash($password);
+      $password = Rock::hash($password);
       $result = Moedoo::select("users", ["user_username" => $username, "user_password" => $password]);
 
       if(count($result) === 1) {
@@ -68,7 +67,7 @@
 
         // user account has been suspended
         if($user["user_status"] === false) {
-          Util::halt(401, "account has been suspended");
+          Rock::halt(401, "account has been suspended");
         }
 
         // all good, proceeding with authentication...
@@ -82,12 +81,12 @@
           // TODO
           // make a fingerprint so that the token stays locked-down
           $jwt = JWT::encode($token, CONFIG\JWT_KEY);
-          Util::JSON(["jwt" => $jwt, "user" => $user]);
+          Rock::JSON(["jwt" => $jwt, "user" => $user], 202);
         }
       }
 
       else {
-        Util::halt(401, "wrong username and/or password");
+        Rock::halt(401, "wrong username and/or password");
       }
     }
 
@@ -103,17 +102,17 @@
      * @param string $table
      * @param string $role
      */
-    public static function check($method, $table, $role = "ANY") {
+    public static function check($method, $table, $role = null) {
       if(array_key_exists($table, CONFIG\TABLES) === false) {
-        Util::halt(404, "requested resource `". $table ."` does not exist");
+        Rock::halt(404, "requested resource `". $table ."` does not exist");
       }
 
       if(in_array($table, CONFIG\FORBIDDEN_REQUESTS[$method]) === true) {
-        Util::halt(403, "`". $method ."` method on table `". $table ."` is forbidden");
+        Rock::halt(403, "`". $method ."` method on table `". $table ."` is forbidden");
       }
 
       if(in_array($table, CONFIG\AUTH_REQUESTS[$method]) === true) {
-        $role === "ANY" ? Rock::authenticated() : Rock::authenticated($role);
+        $role === null ? Rock::authenticated() : Rock::authenticated($role);
       }
     }
 
@@ -122,22 +121,108 @@
     /**
      * returns body after validating payload
      *
-     * @param string $table - request body as a string
+     * @param string $table - table name to check validation against
      * @return associative array representation of the passed body
      */
-    public static function getBody($table) {
-      $app = \Slim\Slim::getInstance();
-      $request = $app->request;
-      $body = Util::toArray($request->getBody());
+    public static function getBody($table = null) {
+      $streamHandle = fopen("php://input", "r");
+      $body = (string)stream_get_contents($streamHandle);
+      fclose($streamHandle);
+      $body = Util::toArray($body);
 
-      // validating payload...
-      foreach($body as $column => $value) {
-        if(in_array($column, CONFIG\TABLES[$table]["columns"]) === false) {
-          Util::halt(400, "unknown column `". $column ."`");
+      if($table !== null) {
+        // validating payload...
+        foreach($body as $column => $value) {
+          if(in_array($column, CONFIG\TABLES[$table]["columns"]) === false) {
+            Rock::halt(400, "unknown column `{$column}` for table `{$table}`");
+          }
         }
       }
 
       return $body;
+    }
+
+
+
+    /**
+     * given an array and status code it'll return a JSON response
+     *
+     * @param array $data
+     * @param integer $status
+     */
+    public static function JSON($data, $status = 200) {
+      header("HTTP/1.1 ". $status ." ". Util::$codes[$status]);
+      header("Content-Type: application/json;charset=utf-8");
+      echo json_encode($data);
+    }
+
+
+
+    /**
+     * "destroys" the app
+     * sends one LAST message before halting
+     *
+     * @param integer $status
+     * @param string $message - message to be sent back with `error` property
+     */
+    public static function halt($status = 401, $message = null) {
+      if($message === null) {
+        header("HTTP/1.1 ". $status ." ". Util::$codes[$status]);
+        header("Content-Type: application/json;charset=utf-8");
+      }
+
+      else {
+        Rock::JSON(["error" => $message], $status);
+      }
+
+      exit;
+    }
+
+
+
+    /**
+     * given a string it'll return the hashed form
+     *
+     * @param string $string
+     * @return string
+     */
+    public static function hash($string) {
+      $hash = hash_init(CONFIG\HASH);
+      hash_update($hash, $string);
+      hash_update($hash, CONFIG\SALT);
+
+      return hash_final($hash);
+    }
+
+
+
+    /**
+     * return request headers as an associative array
+     *
+     * exception header
+     * 4: unable to process request headers
+     */
+    public static function getHeaders() {
+      $headers = getallheaders();
+
+      if($headers === false) {
+        throw new Exception("Error Processing Request", 5);
+      }
+
+      return $headers;
+    }
+
+
+
+    /**
+     * returns URL
+     *
+     * @return string
+     */
+    public static function getUrl() {
+      $URL = $_SERVER["REQUEST_SCHEME"] ."://". $_SERVER["SERVER_NAME"];
+      $URL .= $_SERVER["SERVER_PORT"] == "80" ? "" : ":". $_SERVER["SERVER_PORT"];
+      return $URL;
     }
   }
 ?>

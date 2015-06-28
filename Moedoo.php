@@ -239,21 +239,44 @@
 
 
     /**
+     * returns row count on a table
+     *
+     * @param string $table
+     * @return integer
+     */
+    public static function count($table) {
+      $query = "SELECT count(". CONFIG\TABLES[$table]["pk"] .") as count FROM ". CONFIG\TABLE_PREFIX ."{$table};";
+      $params = [];
+      $result = pg_query_params($query, $params);
+      $count = 0;
+
+      if(pg_affected_rows($result) === 1) {
+        $count = (int)pg_fetch_all($result)[0]["count"];
+      }
+
+      return $count;
+    }
+
+
+
+    /**
      * executes SELECT command on a given table
      *
      * @param string $table - table to operate select command on
      * @param array $and - concatenated with `AND`
      * @param array $or - concatenated with `OR`
      * @param array $depth - -1 implies FULL depth [not recommended]
+     * @param integer $limit - limit on row limit
+     * @param integer $offset - offset on query
      * @return affected rows or null if an error occurred
      */
-    public static function select($table, $and = null, $or = null, &$depth = 1) {
+    public static function select($table, $and = null, $or = null, &$depth = 1, $limit = "ALL", $offset = 0) {
       $columns = implode(", ", CONFIG\TABLES[$table]["returning"]);
       $query = "SELECT {$columns} FROM ". CONFIG\TABLE_PREFIX ."{$table}";
       $params = [];
 
       if($and === null && $or === null) {
-        $query .= " ORDER BY ". CONFIG\TABLES[$table]["pk"] ." DESC;";
+        $query .= " ORDER BY ". CONFIG\TABLES[$table]["pk"] ." DESC ";
       }
 
       else {
@@ -287,8 +310,10 @@
           $query .= ")";
         }
 
-        $query .= " ORDER BY ". CONFIG\TABLES[$table]["pk"] ." DESC;";
+        $query .= " ORDER BY ". CONFIG\TABLES[$table]["pk"] ." DESC ";
       }
+
+      $query .= "LIMIT {$limit} OFFSET {$offset};";
 
       $result = pg_query_params($query, $params);
 
