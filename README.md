@@ -1,4 +1,4 @@
-![The Rock](https://github.com/moe-szyslak/TheRock/raw/master/__S3__/TheRock.png "The Rock")
+![The Rock](https://raw.githubusercontent.com/moe-szyslak/The-Rock/master/__S3__/TheRock.png "The Rock")
 
 #The Rock
 a set of static helper functions added on top of [FastRoute](https://github.com/nikic/FastRoute) and [Pimple](https://github.com/silexphp/Pimple) that make my 9-5 life easy.
