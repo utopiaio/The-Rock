@@ -94,9 +94,7 @@
       "search"    => ["story"],
       "fk"        => [
         "by" => ["table" => "users", "references" => "user_id"],
-      ],
-      "map" => [
-        "tags" => ["table" => "tags", "references" => "id"]
+        "[tags]" => ["table" => "tags", "references" => "id"]
       ]
     ],
     "tags"        => [
@@ -115,8 +113,8 @@
       "intArray"  => ["user_friends"],
       "bool"      => ["user_status"],
       "search"    => ["user_full_name", "user_username", "user_type"],
-      "map"       => [
-        "user_friends" => ["table" => "users", "references" => "user_id"]
+      "fk"       => [
+        "[user_friends]" => ["table" => "users", "references" => "user_id"]
       ]
     ]
   ];
