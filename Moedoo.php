@@ -18,63 +18,59 @@
 
         if(array_key_exists("fk", CONFIG\TABLES[$table]) === true) {
           foreach(CONFIG\TABLES[$table]["fk"] as $column => $referenceRule) {
-            foreach($rows as $index => &$row) {
-              if($row[$column] !== null) {
-                if(array_key_exists($row[$column], $referenced) === true) {
-                  $row[$column] = $referenced[$row[$column]];
-                }
+            if(preg_match("/^\[.+\]$/", $column) === 1) {
+              $column = trim($column, "[]");
 
-                else {
-                  $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $row[$column]], null, $depth);
+              foreach($rows as $index => &$row) {
+                $map = [];
 
-                  if(count($referencedRow) === 1) {
-                    $referenced[$row[$column]] = $referencedRow[0];
-                    $row[$column] = $referencedRow[0];
+                foreach($row[$column] as $index => $value) {
+                  if(array_key_exists($value, $referenced) === true) {
+                    if($referenced[$value] !== -1) {
+                      array_push($map, $referenced[$value]);
+                    }
                   }
 
                   else {
-                    $referenced[$row[$column]] = null;
-                    $row[$column] = null;
-                  }
-                }
-              }
-            }
-          }
-        }
+                    $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $value], null, $depth);
 
-        if(array_key_exists("map", CONFIG\TABLES[$table]) === true) {
-          $mapped = []; // caches referenced values so db hit is minimal
+                    if(count($referencedRow) === 1) {
+                      $referenced[$value] = $referencedRow[0];
+                      array_push($map, $referencedRow[0]);
+                    }
 
-          foreach($rows as $index => &$row) {
-            $map = [];
-
-            foreach(CONFIG\TABLES[$table]["map"] as $column => $rule) {
-              // O^3 --- there's no turning back now
-              // -1 is used as a flag to skip mapping
-              // i.e. non existing references will simply "vanish" --- now that's
-              // what i call INTEGRITY
-              foreach($row[$column] as $index => $value) {
-                if(array_key_exists($value, $mapped) === true) {
-                  if($mapped[$value] !== -1) {
-                    array_push($map, $mapped[$value]);
-                  }
-                }
-
-                else {
-                  $referencedRow = Moedoo::select($rule["table"], [$rule["references"] => $value], null, $depth);
-
-                  if(count($referencedRow) === 1) {
-                    $mapped[$value] = $referencedRow[0];
-                    array_push($map, $referencedRow[0]);
-                  }
-
-                  else {
-                    $mapped[$value] = -1;
+                    else {
+                      $referenced[$value] = -1;
+                    }
                   }
                 }
               }
 
               $row[$column] = $map;
+            }
+
+            else {
+              foreach($rows as $index => &$row) {
+                if($row[$column] !== null) {
+                  if(array_key_exists($row[$column], $referenced) === true) {
+                    $row[$column] = $referenced[$row[$column]];
+                  }
+
+                  else {
+                    $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $row[$column]], null, $depth);
+
+                    if(count($referencedRow) === 1) {
+                      $referenced[$row[$column]] = $referencedRow[0];
+                      $row[$column] = $referencedRow[0];
+                    }
+
+                    else {
+                      $referenced[$row[$column]] = null;
+                      $row[$column] = null;
+                    }
+                  }
+                }
+              }
             }
           }
         }
