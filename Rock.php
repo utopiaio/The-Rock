@@ -9,15 +9,15 @@
     public static function authenticated($role = null) {
       $requestHeaders = Rock::getHeaders();
 
-      if(array_key_exists(CONFIG\JWT_HEADER, $requestHeaders) === true) {
+      if(array_key_exists(Config::get("JWT_HEADER"), $requestHeaders) === true) {
         try {
-          $decoded = (array)JWT::decode($requestHeaders[CONFIG\JWT_HEADER], CONFIG\JWT_KEY, ["HS256"]);
+          $decoded = (array)JWT::decode($requestHeaders[Config::get("JWT_HEADER")], Config::get("JWT_KEY"), ["HS256"]);
         } catch(Exception $e) {
           Rock::halt(401, "invalid authorization token");
         }
 
         $depth = 0;
-        $result = Moedoo::select("users", [CONFIG\TABLES["users"]["pk"] => $decoded["id"]], null, $depth);
+        $result = Moedoo::select("users", [Config::get("TABLES")["users"]["pk"] => $decoded["id"]], null, $depth);
 
         if(count($result) === 1) {
           $user = $result[0];
@@ -43,7 +43,7 @@
       }
 
       else {
-        Rock::halt(401, "missing authentication header `". CONFIG\JWT_HEADER ."`");
+        Rock::halt(401, "missing authentication header `". Config::get("JWT_HEADER") ."`");
       }
     }
 
@@ -73,14 +73,14 @@
         // all good, proceeding with authentication...
         else {
           $token = [
-            "iss" => CONFIG\JWT_ISS,
-            "iat" => strtotime(CONFIG\JWT_IAT),
+            "iss" => Config::get("JWT_ISS"),
+            "iat" => strtotime(Config::get("JWT_IAT")),
             "id" => $user["user_id"]
           ];
 
           // TODO
           // make a fingerprint so that the token stays locked-down
-          $jwt = JWT::encode($token, CONFIG\JWT_KEY);
+          $jwt = JWT::encode($token, Config::get("JWT_KEY"));
           Rock::JSON(["jwt" => $jwt, "user" => $user], 202);
         }
       }
@@ -103,15 +103,15 @@
      * @param string $role
      */
     public static function check($method, $table, $role = null) {
-      if(array_key_exists($table, CONFIG\TABLES) === false) {
+      if(array_key_exists($table, Config::get("TABLES")) === false) {
         Rock::halt(404, "requested resource `". $table ."` does not exist");
       }
 
-      if(in_array($table, CONFIG\FORBIDDEN_REQUESTS[$method]) === true) {
+      if(in_array($table, Config::get("FORBIDDEN_REQUESTS")[$method]) === true) {
         Rock::halt(403, "`". $method ."` method on table `". $table ."` is forbidden");
       }
 
-      if(in_array($table, CONFIG\AUTH_REQUESTS[$method]) === true) {
+      if(in_array($table, Config::get("AUTH_REQUESTS")[$method]) === true) {
         $role === null ? Rock::authenticated() : Rock::authenticated($role);
       }
     }
@@ -133,7 +133,7 @@
       if($table !== null) {
         // validating payload...
         foreach($body as $column => $value) {
-          if(in_array($column, CONFIG\TABLES[$table]["columns"]) === false) {
+          if(in_array($column, Config::get("TABLES")[$table]["columns"]) === false) {
             Rock::halt(400, "unknown column `{$column}` for table `{$table}`");
           }
         }
@@ -187,9 +187,9 @@
      * @return string
      */
     public static function hash($string) {
-      $hash = hash_init(CONFIG\HASH);
+      $hash = hash_init(Config::get("HASH"));
       hash_update($hash, $string);
-      hash_update($hash, CONFIG\SALT);
+      hash_update($hash, Config::get("SALT"));
 
       return hash_final($hash);
     }
