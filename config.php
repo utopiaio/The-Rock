@@ -90,7 +90,7 @@
           "columns"   => ["id", "story", "by", "tags"],
           "returning" => ["id", "story", "by", "tags"],
           "int"       => ["id", "by"],
-          "intArray"  => ["tags"],
+          "[int]"     => ["tags"],
           "search"    => ["story"],
           "fk"        => [
             "by" => ["table" => "users", "references" => "user_id"],
@@ -109,7 +109,7 @@
           "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_type", "user_status", "user_friends"],
           "returning" => ["user_id", "user_full_name", "user_username", "user_type", "user_status", "user_friends"],
           "int"       => ["user_id"],
-          "intArray"  => ["user_friends"],
+          "[int]"     => ["user_friends"],
           "bool"      => ["user_status"],
           "search"    => ["user_full_name", "user_username", "user_type"],
           "fk"       => [
