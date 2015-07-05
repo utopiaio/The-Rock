@@ -99,9 +99,9 @@
           $value = $value === true ? "TRUE" : "FALSE";
         }
 
-        if( (array_key_exists("intArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["intArray"]) === true) ||
-            (array_key_exists("floatArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["floatArray"]) === true) ||
-            (array_key_exists("doubleArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["doubleArray"]) === true) ) {
+        if( (array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) ||
+            (array_key_exists("[float]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[float]"]) === true) ||
+            (array_key_exists("[double]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[double]"]) === true) ) {
           $value = "{". implode(",", $value) ."}";
         }
       }
@@ -144,7 +144,7 @@
 
           // for now (and probably forever) we can only work with 1D arrays
           // since we'll have PG version 8 we can't use JSON :(
-          if(array_key_exists("intArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["intArray"]) === true) {
+          if(array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) {
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
             foreach($value as $index => &$v) {
@@ -152,7 +152,7 @@
             }
           }
 
-          if(array_key_exists("floatArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["floatArray"]) === true) {
+          if(array_key_exists("[float]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[float]"]) === true) {
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
             foreach($value as $index => &$v) {
@@ -160,7 +160,7 @@
             }
           }
 
-          if(array_key_exists("doubleArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["doubleArray"]) === true) {
+          if(array_key_exists("[double]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[double]"]) === true) {
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
             foreach($value as $index => &$v) {
