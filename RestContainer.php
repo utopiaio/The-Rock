@@ -19,7 +19,7 @@
       switch($_SERVER["REQUEST_METHOD"]) {
         case "GET":
           $file = $routeInfo[2]["filePath"];
-          $filePath = CONFIG\S3_UPLOAD_DIR ."/". $file;
+          $filePath = Config::get("S3_UPLOAD_DIR") ."/". $file;
 
           if(file_exists($filePath) === true) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -43,8 +43,8 @@
 
         case "POST":
           $uploadHandler = new TheRockUploadHandler([
-            "upload_dir" => CONFIG\S3_UPLOAD_DIR ."/",
-            "upload_url" =>  Rock::getUrl() ."/". CONFIG\S3_UPLOAD_URL ."/"
+            "upload_dir" => Config::get("S3_UPLOAD_DIR") ."/",
+            "upload_url" =>  Rock::getUrl() ."/". Config::get("S3_UPLOAD_URL") ."/"
           ]);
         break;
 
@@ -57,12 +57,12 @@
               $fileInfo = Moedoo::delete("s3", (int)$file);
               Rock::JSON($fileInfo, 202);
 
-              if(is_file(CONFIG\S3_UPLOAD_DIR ."/". $fileInfo["name"])) {
-                unlink(CONFIG\S3_UPLOAD_DIR ."/". $fileInfo["name"]);
+              if(is_file(Config::get("S3_UPLOAD_DIR") ."/". $fileInfo["name"])) {
+                unlink(Config::get("S3_UPLOAD_DIR") ."/". $fileInfo["name"]);
               }
 
-              if(is_file(CONFIG\S3_UPLOAD_DIR ."/thumbnail/". $fileInfo["name"])) {
-                unlink(CONFIG\S3_UPLOAD_DIR ."/thumbnail/". $fileInfo["name"]);
+              if(is_file(Config::get("S3_UPLOAD_DIR") ."/thumbnail/". $fileInfo["name"])) {
+                unlink(Config::get("S3_UPLOAD_DIR") ."/thumbnail/". $fileInfo["name"]);
               }
             } catch(Exception $e) {
               Rock::halt($e->getCode() === 1 ? 404 : 400, $e->getMessage());
@@ -82,12 +82,12 @@
                 $fileInfo = Moedoo::delete("s3", $fileInfo[0]["id"]);
                 Rock::JSON($fileInfo, 202);
 
-                if(is_file(CONFIG\S3_UPLOAD_DIR ."/". $fileInfo["name"])) {
-                  unlink(CONFIG\S3_UPLOAD_DIR ."/". $fileInfo["name"]);
+                if(is_file(Config::get("S3_UPLOAD_DIR") ."/". $fileInfo["name"])) {
+                  unlink(Config::get("S3_UPLOAD_DIR") ."/". $fileInfo["name"]);
                 }
 
-                if(is_file(CONFIG\S3_UPLOAD_DIR ."/thumbnail/". $fileInfo["name"])) {
-                  unlink(CONFIG\S3_UPLOAD_DIR ."/thumbnail/". $fileInfo["name"]);
+                if(is_file(Config::get("S3_UPLOAD_DIR") ."/thumbnail/". $fileInfo["name"])) {
+                  unlink(Config::get("S3_UPLOAD_DIR") ."/thumbnail/". $fileInfo["name"]);
                 }
               } catch(Exception $e) {
                 Rock::halt(400, $e->getMessage());
@@ -136,7 +136,7 @@
           }
 
           else {
-            $result = $id === -1 ? Moedoo::select($table) : Moedoo::select($table, [CONFIG\TABLES[$table]["pk"] => $id]);
+            $result = $id === -1 ? Moedoo::select($table) : Moedoo::select($table, [Config::get("TABLES")[$table]["pk"] => $id]);
 
             if($id === -1) {
               Rock::JSON($result, 200);
@@ -231,13 +231,13 @@
       $origin = array_key_exists("Origin", $requestHeaders) === true ? $requestHeaders["Origin"] : "*";
       $origin_stripped = preg_replace("/https?:\/\/|www\./", "", $origin);
 
-      if(in_array("*", CONFIG\CORS_WHITE_LIST) === true || in_array($origin_stripped, CONFIG\CORS_WHITE_LIST) === true) {
+      if(in_array("*", Config::get("CORS_WHITE_LIST")) === true || in_array($origin_stripped, Config::get("CORS_WHITE_LIST")) === true) {
         header("HTTP/1.1 202 Accepted");
         header("Access-Control-Allow-Origin: {$origin}");
-        header("Access-Control-Allow-Methods: ". implode(", ", CONFIG\CORS_METHODS));
-        header("Access-Control-Allow-Headers: ". implode(", ", CONFIG\CORS_HEADERS));
+        header("Access-Control-Allow-Methods: ". implode(", ", Config::get("CORS_METHODS")));
+        header("Access-Control-Allow-Headers: ". implode(", ", Config::get("CORS_HEADERS")));
         header("Access-Control-Allow-Credentials: true");
-        header("Access-Control-Max-Age: ". CONFIG\CORS_MAX_AGE);
+        header("Access-Control-Max-Age: ". Config::get("CORS_MAX_AGE"));
       }
 
       else {

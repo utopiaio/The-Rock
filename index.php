@@ -32,6 +32,10 @@
 
   $routeInfo = $dispatcher->dispatch($_SERVER["REQUEST_METHOD"], array_key_exists("REDIRECT_URL", $_SERVER) === true ? $_SERVER["REDIRECT_URL"] : "/");
 
+  if(array_key_exists("REDIRECT_URL", $_SERVER) === false) {
+    $_SERVER["REDIRECT_URL"] = "/";
+  }
+
   switch($routeInfo[0]) {
     case FastRoute\Dispatcher::NOT_FOUND:
       Rock::halt(404, "`".  $_SERVER["REQUEST_METHOD"] ."` method with URL `". $_SERVER["REDIRECT_URL"] ."` not found");
@@ -46,7 +50,7 @@
         Rock::check($_SERVER["REQUEST_METHOD"], $routeInfo[2]["table"]);
       }
 
-      Moedoo::db(CONFIG\DB_HOST, CONFIG\DB_PORT, CONFIG\DB_USER, CONFIG\DB_PASSWORD, CONFIG\DB_NAME);
+      Moedoo::db(Config::get("DB_HOST"), Config::get("DB_PORT"), Config::get("DB_USER"), Config::get("DB_PASSWORD"), Config::get("DB_NAME"));
       $RestContainer[$routeInfo[1]]($routeInfo);
     break;
   }

@@ -16,8 +16,8 @@
 
         $referenced = []; // caches referenced values so db hit is minimal
 
-        if(array_key_exists("fk", CONFIG\TABLES[$table]) === true) {
-          foreach(CONFIG\TABLES[$table]["fk"] as $column => $referenceRule) {
+        if(array_key_exists("fk", Config::get("TABLES")[$table]) === true) {
+          foreach(Config::get("TABLES")[$table]["fk"] as $column => $referenceRule) {
             if(preg_match("/^\[.+\]$/", $column) === 1) {
               $column = trim($column, "[]");
 
@@ -91,17 +91,17 @@
      */
     private static function castForPg($table, $data) {
       foreach($data as $column => &$value) {
-        if(array_key_exists("JSON", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["JSON"]) === true) {
+        if(array_key_exists("JSON", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["JSON"]) === true) {
           $value = json_encode($value);
         }
 
-        if(array_key_exists("bool", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["bool"]) === true) {
+        if(array_key_exists("bool", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["bool"]) === true) {
           $value = $value === true ? "TRUE" : "FALSE";
         }
 
-        if( (array_key_exists("intArray", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["intArray"]) === true) ||
-            (array_key_exists("floatArray", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["floatArray"]) === true) ||
-            (array_key_exists("doubleArray", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["doubleArray"]) === true) ) {
+        if( (array_key_exists("intArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["intArray"]) === true) ||
+            (array_key_exists("floatArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["floatArray"]) === true) ||
+            (array_key_exists("doubleArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["doubleArray"]) === true) ) {
           $value = "{". implode(",", $value) ."}";
         }
       }
@@ -122,29 +122,29 @@
     public static function cast($table, $rows) {
       foreach($rows as $index => &$row) {
         foreach($row as $column => &$value) {
-          if(array_key_exists("JSON", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["JSON"]) === true) {
+          if(array_key_exists("JSON", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["JSON"]) === true) {
             $value = json_decode($value);
           }
 
-          if(array_key_exists("int", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["int"]) === true) {
+          if(array_key_exists("int", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["int"]) === true) {
             $value = (int)$value;
           }
 
-          if(array_key_exists("float", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["float"]) === true) {
+          if(array_key_exists("float", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["float"]) === true) {
             $value = (float)$value;
           }
 
-          if(array_key_exists("double", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["double"]) === true) {
+          if(array_key_exists("double", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["double"]) === true) {
             $value = (double)$value;
           }
 
-          if(array_key_exists("bool", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["bool"]) === true) {
+          if(array_key_exists("bool", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["bool"]) === true) {
             $value = $value === "t" ? true : false;
           }
 
           // for now (and probably forever) we can only work with 1D arrays
           // since we'll have PG version 8 we can't use JSON :(
-          if(array_key_exists("intArray", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["intArray"]) === true) {
+          if(array_key_exists("intArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["intArray"]) === true) {
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
             foreach($value as $index => &$v) {
@@ -152,7 +152,7 @@
             }
           }
 
-          if(array_key_exists("floatArray", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["floatArray"]) === true) {
+          if(array_key_exists("floatArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["floatArray"]) === true) {
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
             foreach($value as $index => &$v) {
@@ -160,7 +160,7 @@
             }
           }
 
-          if(array_key_exists("doubleArray", CONFIG\TABLES[$table]) === true && in_array($column, CONFIG\TABLES[$table]["doubleArray"]) === true) {
+          if(array_key_exists("doubleArray", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["doubleArray"]) === true) {
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
             foreach($value as $index => &$v) {
@@ -199,22 +199,22 @@
      * @param string $query
      */
     public static function search($table, $q, $depth = 1) {
-      $columns = implode(", ", CONFIG\TABLES[$table]["returning"]);
+      $columns = implode(", ", Config::get("TABLES")[$table]["returning"]);
       $q = preg_replace("/ +/", "|", trim($q));
       $q = preg_replace("/ /", "|", $q);
       $params = [$q];
-      $query = "SELECT {$columns} FROM ". CONFIG\TABLE_PREFIX ."{$table} WHERE ";
+      $query = "SELECT {$columns} FROM ". Config::get("TABLE_PREFIX") ."{$table} WHERE ";
       $where = "";
       $order_by = "ORDER BY";
 
       // building vector...
-      foreach(CONFIG\TABLES[$table]["search"] as $key => $value) {
+      foreach(Config::get("TABLES")[$table]["search"] as $key => $value) {
         $where .= "to_tsvector({$value}) @@ to_tsquery($1) OR ";
       }
       $where = substr($where, 0, -4);
 
       // building rank...
-      foreach(CONFIG\TABLES[$table]["search"] as $key => $value) {
+      foreach(Config::get("TABLES")[$table]["search"] as $key => $value) {
         $order_by .= " ts_rank(to_tsvector($value), to_tsquery($1)) DESC, ";
       }
       $order_by = substr($order_by, 0, -2);
@@ -241,7 +241,7 @@
      * @return integer
      */
     public static function count($table) {
-      $query = "SELECT count(". CONFIG\TABLES[$table]["pk"] .") as count FROM ". CONFIG\TABLE_PREFIX ."{$table};";
+      $query = "SELECT count(". Config::get("TABLES")[$table]["pk"] .") as count FROM ". Config::get("TABLE_PREFIX") ."{$table};";
       $params = [];
       $result = pg_query_params($query, $params);
       $count = 0;
@@ -267,12 +267,12 @@
      * @return affected rows or null if an error occurred
      */
     public static function select($table, $and = null, $or = null, &$depth = 1, $limit = "ALL", $offset = 0) {
-      $columns = implode(", ", CONFIG\TABLES[$table]["returning"]);
-      $query = "SELECT {$columns} FROM ". CONFIG\TABLE_PREFIX ."{$table}";
+      $columns = implode(", ", Config::get("TABLES")[$table]["returning"]);
+      $query = "SELECT {$columns} FROM ". Config::get("TABLE_PREFIX") ."{$table}";
       $params = [];
 
       if($and === null && $or === null) {
-        $query .= " ORDER BY ". CONFIG\TABLES[$table]["pk"] ." DESC ";
+        $query .= " ORDER BY ". Config::get("TABLES")[$table]["pk"] ." DESC ";
       }
 
       else {
@@ -306,7 +306,7 @@
           $query .= ")";
         }
 
-        $query .= " ORDER BY ". CONFIG\TABLES[$table]["pk"] ." DESC ";
+        $query .= " ORDER BY ". Config::get("TABLES")[$table]["pk"] ." DESC ";
       }
 
       $query .= "LIMIT {$limit} OFFSET {$offset};";
@@ -354,9 +354,9 @@
 
       $columns = implode(", ", $columns);
       $holders = implode(", ", $holders);
-      $returning = implode(", ", CONFIG\TABLES[$table]["returning"]);
+      $returning = implode(", ", Config::get("TABLES")[$table]["returning"]);
 
-      $query = "INSERT INTO ". CONFIG\TABLE_PREFIX ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
+      $query = "INSERT INTO ". Config::get("TABLE_PREFIX") ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
 
       try {
         $result = pg_query_params($query, $params);
@@ -406,7 +406,7 @@
       $count = 1;
       $set = [];
       $params = [];
-      $columns = implode(", ", CONFIG\TABLES[$table]["returning"]);
+      $columns = implode(", ", Config::get("TABLES")[$table]["returning"]);
 
       foreach($data as $column => $value) {
         array_push($set, $column."=\${$count}");
@@ -417,7 +417,7 @@
       $set = implode(", ", $set);
       array_push($params, $id);
 
-      $query = "UPDATE ". CONFIG\TABLE_PREFIX ."{$table} SET {$set} WHERE ". CONFIG\TABLES[$table]["pk"] ."=\${$count} RETURNING {$columns};";
+      $query = "UPDATE ". Config::get("TABLE_PREFIX") ."{$table} SET {$set} WHERE ". Config::get("TABLES")[$table]["pk"] ."=\${$count} RETURNING {$columns};";
 
       try {
         $result = pg_query_params($query, $params);
@@ -467,9 +467,9 @@
      */
     public static function delete($table, $id) {
       $params = [$id];
-      $columns = implode(", ", CONFIG\TABLES[$table]["returning"]);
+      $columns = implode(", ", Config::get("TABLES")[$table]["returning"]);
 
-      $query = "DELETE FROM ". CONFIG\TABLE_PREFIX ."{$table} WHERE ". CONFIG\TABLES[$table]["pk"] ."=$1 RETURNING {$columns};";
+      $query = "DELETE FROM ". Config::get("TABLE_PREFIX") ."{$table} WHERE ". Config::get("TABLES")[$table]["pk"] ."=$1 RETURNING {$columns};";
 
       try {
         $result = pg_query_params($query, $params);
