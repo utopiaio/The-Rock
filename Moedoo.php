@@ -14,9 +14,10 @@
           $depth--;
         }
 
-        $referenced = []; // caches referenced values so db hit is minimal
-
         if(array_key_exists("fk", Config::get("TABLES")[$table]) === true) {
+          $cache = [];
+          $tempDepth = $depth;
+
           foreach(Config::get("TABLES")[$table]["fk"] as $column => $referenceRule) {
             if(preg_match("/^\[.+\]$/", $column) === 1) {
               $column = trim($column, "[]");
@@ -25,49 +26,52 @@
                 $map = [];
 
                 foreach($row[$column] as $index => $value) {
-                  if(array_key_exists($value, $referenced) === true) {
-                    if($referenced[$value] !== -1) {
-                      array_push($map, $referenced[$value]);
+                  if(array_key_exists("{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}", $cache) === true) {
+                    if(is_null($cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"]) === false) {
+                      array_push($map, $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"]);
                     }
                   }
 
                   else {
+                    $tempDepth = $depth;
                     $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $value], null, $depth);
+                    $depth = $tempDepth;
 
                     if(count($referencedRow) === 1) {
-                      $referenced[$value] = $referencedRow[0];
+                      $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"] = $referencedRow[0];
                       array_push($map, $referencedRow[0]);
                     }
 
                     else {
-                      $referenced[$value] = -1;
+                      $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"] = null;
                     }
                   }
                 }
-              }
 
-              $row[$column] = $map;
+                $row[$column] = $map;
+              }
             }
 
             else {
               foreach($rows as $index => &$row) {
-                if($row[$column] !== null) {
-                  if(array_key_exists($row[$column], $referenced) === true) {
-                    $row[$column] = $referenced[$row[$column]];
+                if(array_key_exists("{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}", $cache) === true) {
+                  if(is_null($cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"]) === false) {
+                    $row[$column] = $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"];
+                  }
+                }
+
+                else {
+                  $tempDepth = $depth;
+                  $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $row[$column]], null, $depth);
+                  $depth = $tempDepth;
+
+                  if(count($referencedRow) === 1) {
+                    $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"] = $referencedRow[0];
+                    $row[$column] = $referencedRow[0];
                   }
 
                   else {
-                    $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $row[$column]], null, $depth);
-
-                    if(count($referencedRow) === 1) {
-                      $referenced[$row[$column]] = $referencedRow[0];
-                      $row[$column] = $referencedRow[0];
-                    }
-
-                    else {
-                      $referenced[$row[$column]] = null;
-                      $row[$column] = null;
-                    }
+                    $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"] = null;
                   }
                 }
               }
