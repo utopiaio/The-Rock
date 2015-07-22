@@ -76,7 +76,7 @@
       $body = json_decode($body);
 
       if($body === null) {
-        Util::halt(400, "unable to parse body");
+        Rock::halt(400, "unable to parse body");
       }
 
       else {
