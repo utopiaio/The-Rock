@@ -151,7 +151,14 @@
      * @param integer $status
      */
     public static function JSON($data, $status = 200) {
+      $requestHeaders = Rock::getHeaders();
+      $origin = array_key_exists("Origin", $requestHeaders) === true ? $requestHeaders["Origin"] : "*";
       header("HTTP/1.1 ". $status ." ". Util::$codes[$status]);
+      header("Access-Control-Allow-Origin: {$origin}");
+      header("Access-Control-Allow-Methods: ". implode(", ", Config::get("CORS_METHODS")));
+      header("Access-Control-Allow-Headers: ". implode(", ", Config::get("CORS_HEADERS")));
+      header("Access-Control-Allow-Credentials: true");
+      header("Access-Control-Max-Age: ". Config::get("CORS_MAX_AGE"));
       header("Content-Type: application/json;charset=utf-8");
       echo json_encode($data);
     }
