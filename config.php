@@ -24,6 +24,7 @@
       // S3
       "S3_UPLOAD_DIR" => "__S3__",
       "S3_UPLOAD_URL" => "@S3",
+      "S3_BASE64" => 100000,
 
       // database
       "DB_HOST" => "localhost",
@@ -70,8 +71,8 @@
         ],
         "s3"          => [
           "pk"        => "id",
-          "columns"   => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
-          "returning" => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\""],
+          "columns"   => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\"", "base64"],
+          "returning" => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\"", "base64"],
           "int"       => ["id", "size"],
         ],
         "social"      => [
