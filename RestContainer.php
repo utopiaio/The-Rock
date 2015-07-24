@@ -23,7 +23,7 @@
 
           if(file_exists($filePath) === true) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file(finfo_open(FILEINFO_MIME_TYPE), $filePath);
+            $mime = finfo_file($finfo, $filePath);
             finfo_close($finfo);
 
             header("HTTP/1.1 200 OK");
