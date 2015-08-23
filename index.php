@@ -2,10 +2,10 @@
   require "lib/fast-route/src/bootstrap.php";
   require "lib/pimple/Container.php";
   require "lib/pimple/ServiceProviderInterface.php";
-  require "lib/JWT/Authentication/JWT.php";
-  require "lib/JWT/Exceptions/BeforeValidException.php";
-  require "lib/JWT/Exceptions/ExpiredException.php";
-  require "lib/JWT/Exceptions/SignatureInvalidException.php";
+  require "lib/jwt/Authentication/JWT.php";
+  require "lib/jwt/Exceptions/BeforeValidException.php";
+  require "lib/jwt/Exceptions/ExpiredException.php";
+  require "lib/jwt/Exceptions/SignatureInvalidException.php";
   require "lib/Blueimp/UploadHandler.php";
   require "lib/Blueimp/TheRockUploadHandler.php";
   require "Moedoo.php";
