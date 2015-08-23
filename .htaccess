@@ -13,9 +13,6 @@ RedirectMatch 404 /\..*$
   Satisfy All
 </FilesMatch>
 
-# disable directory browsing
-Options All -Indexes
-
 # compression
 <IfModule mod_deflate.c>
   <IfModule mod_setenvif.c>
