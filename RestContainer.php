@@ -14,6 +14,27 @@
     };
   };
 
+  /**
+   * single request that returns ALL non-Auth / forbidden tables
+   * api.io/all
+   */
+  $RestContainer["all"] = function($c) {
+    return function($routeInfo) {
+      $tables = Config::get('TABLES');
+      unset($tables['users']);
+      $AuthGETRequests = Config::get('AUTH_REQUESTS')['GET'];
+      $AuthGETForbiddenRequests = Config::get('FORBIDDEN_REQUESTS')['GET'];
+
+      foreach($tables as $tableName => $property) {
+        if(!in_array($tableName, $AuthGETRequests) && !in_array($tableName, $AuthGETForbiddenRequests)) {
+          $tables[$tableName] = Moedoo::select($tableName);
+        }
+      }
+
+      Rock::JSON(['tables' => $tables], 200);
+    };
+  };
+
   $RestContainer["S3"] = function($c) {
     return function($routeInfo) {
       switch($_SERVER["REQUEST_METHOD"]) {
