@@ -16,6 +16,7 @@
 
   $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute("POST", "/authenticate", "authenticate");
+    $r->addRoute("GET", "/all", "all");
 
     $r->addRoute("GET", "/@S3/{filePath:.+}", "S3");
     $r->addRoute("DELETE", "/@S3/{filePath:.+}", "S3");
