@@ -215,17 +215,18 @@
       foreach(Config::get("TABLES")[$table]["search"] as $key => $value) {
         $where .= "to_tsvector({$value}) @@ to_tsquery($1) OR ";
       }
+
       $where = substr($where, 0, -4);
 
       // building rank...
       foreach(Config::get("TABLES")[$table]["search"] as $key => $value) {
         $order_by .= " ts_rank(to_tsvector($value), to_tsquery($1)) DESC, ";
       }
-      $order_by = substr($order_by, 0, -2);
 
+      $order_by = substr($order_by, 0, -2);
       $result = pg_query_params("{$query} {$where} {$order_by};", $params);
 
-      if(pg_affected_rows($result) === 0) {
+      if(pg_fetch_all($result) === false) {
         return [];
       }
 
@@ -314,10 +315,9 @@
       }
 
       $query .= "LIMIT {$limit} OFFSET {$offset};";
-
       $result = pg_query_params($query, $params);
 
-      if(pg_affected_rows($result) === 0) {
+      if(pg_fetch_all($result) === false) {
         return [];
       }
 
