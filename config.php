@@ -31,7 +31,7 @@
       "DB_USER" => "moe",
       "DB_PASSWORD" => "\"\"",
       "DB_PORT" => 5432,
-      "DB_NAME" => "the_rock",
+      "DB_NAME" => "rock",
 
       // CORS
       "CORS_WHITE_LIST" => ["*", "rock.io", "foo.com"],
