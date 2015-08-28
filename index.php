@@ -43,7 +43,7 @@
     break;
 
     case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-      Rock::halt(404, "`".  $_SERVER["REQUEST_METHOD"] ."` method with URL `". $_SERVER["REDIRECT_URL"] ."` not found");
+      Rock::halt(405, "`".  $_SERVER["REQUEST_METHOD"] ."` method with URL `". $_SERVER["REDIRECT_URL"] ."` not allowed");
     break;
 
     case FastRoute\Dispatcher::FOUND:
