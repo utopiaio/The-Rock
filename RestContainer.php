@@ -185,8 +185,10 @@
                 $body["user_username"] = preg_replace("/ /", "_", $body["user_username"]);
               }
 
-              if(array_key_exists("user_password", $body) === true) {
+              if(array_key_exists("user_password", $body) === true && strlen($body["user_password"]) > 3) {
                 $body["user_password"] = Rock::hash($body["user_password"]);
+              } else {
+                Rock::halt(400, "invalid password provided");
               }
             break;
           }
@@ -212,8 +214,10 @@
                 $body["user_username"] = preg_replace("/ /", "_", $body["user_username"]);
               }
 
-              if(array_key_exists("user_password", $body) === true) {
+              if(array_key_exists("user_password", $body) === true && strlen($body["user_password"]) > 3) {
                 $body["user_password"] = Rock::hash($body["user_password"]);
+              } else {
+                unset($body["user_password"]);
               }
             break;
           }
