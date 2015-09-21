@@ -201,8 +201,10 @@
      *
      * @param string $table
      * @param string $query
+     * @param string $limit
+     * @param integer $depth
      */
-    public static function search($table, $q, $depth = 1) {
+    public static function search($table, $q, $limit = "ALL", $depth = 1) {
       $columns = implode(", ", Config::get("TABLES")[$table]["returning"]);
       $q = preg_replace("/ +/", "|", trim($q));
       $q = preg_replace("/ /", "|", $q);
@@ -224,7 +226,8 @@
       }
 
       $order_by = substr($order_by, 0, -2);
-      $result = pg_query_params("{$query} {$where} {$order_by};", $params);
+      $limit = "LIMIT {$limit}";
+      $result = pg_query_params("{$query} {$where} {$order_by} {$limit};", $params);
 
       if(pg_fetch_all($result) === false) {
         return [];
