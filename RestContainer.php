@@ -136,7 +136,8 @@
           }
 
           if(isset($_GET["q"]) === true && $id === -1) {
-            Rock::JSON(Moedoo::search($table, $_GET["q"]), 200);
+            $limit = (isset($_GET["limit"]) === true && preg_match("/^\d+$/", $_GET["limit"])) ? $_GET["limit"] : "ALL";
+            Rock::JSON(Moedoo::search($table, $_GET["q"], $limit), 200);
           }
 
           else if($count === true) {
