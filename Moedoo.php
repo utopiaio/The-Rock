@@ -249,9 +249,10 @@
       $query = "SELECT count(". Config::get("TABLES")[$table]["pk"] .") as count FROM ". Config::get("TABLE_PREFIX") ."{$table};";
       $params = [];
       $result = pg_query_params($query, $params);
-      $count = 0;
 
-      if(pg_affected_rows($result) === 1) {
+      if(pg_fetch_all($result) === false) {
+        $count = 0;
+      } else {
         $count = (int)pg_fetch_all($result)[0]["count"];
       }
 
