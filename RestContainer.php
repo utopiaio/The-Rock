@@ -22,6 +22,7 @@
     return function($routeInfo) {
       $tables = Config::get("TABLES");
       unset($tables["users"]);
+      unset($tables["s3"]);
       $AuthGETRequests = Config::get("AUTH_REQUESTS")["GET"];
       $AuthGETForbiddenRequests = Config::get("FORBIDDEN_REQUESTS")["GET"];
 
