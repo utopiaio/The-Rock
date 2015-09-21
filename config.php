@@ -24,7 +24,7 @@
       // S3
       "S3_UPLOAD_DIR" => "__S3__",
       "S3_UPLOAD_URL" => "@S3",
-      "S3_BASE64" => 100000,
+      "S3_BASE64" => 50000,
 
       // database
       "DB_HOST" => "localhost",
