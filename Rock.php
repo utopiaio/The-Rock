@@ -227,7 +227,7 @@
      * @return string
      */
     public static function getUrl() {
-      $URL = $_SERVER["REQUEST_SCHEME"] ."://". $_SERVER["SERVER_NAME"];
+      $URL = isset($_SERVER["REQUEST_SCHEME"]) === true ? $_SERVER["REQUEST_SCHEME"] : "http" ."://". $_SERVER["SERVER_NAME"];
       $URL .= $_SERVER["SERVER_PORT"] == "80" ? "" : ":". $_SERVER["SERVER_PORT"];
       return $URL;
     }
