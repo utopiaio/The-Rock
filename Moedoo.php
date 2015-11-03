@@ -86,6 +86,30 @@
 
 
     /**
+     * builds a returning table syntax
+     *
+     * this is to be used for casting special columns like geometry
+     *
+     * @param string $table
+     * @return array
+     */
+    public static function buildReturn($table) {
+      $build = "";
+
+      foreach(Config::get("TABLES")[$table]["returning"] as $index => $column) {
+        if(array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
+          $build .= "ST_AsGeoJSON({$column}) as {$column}, ";
+        } else {
+          $build .= "{$column}, ";
+        }
+      }
+
+      return substr($build, 0, -2);
+    }
+
+
+
+    /**
      * given an array it'll cast accordingly so that the db operation can
      * be done without a glitch --- fingers crossed
      *
