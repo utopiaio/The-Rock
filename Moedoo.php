@@ -127,6 +127,10 @@
           $value = $value === true ? "TRUE" : "FALSE";
         }
 
+        if(array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
+          $value = json_encode($value);
+        }
+
         if( (array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) ||
             (array_key_exists("[float]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[float]"]) === true) ||
             (array_key_exists("[double]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[double]"]) === true) ) {
@@ -151,6 +155,10 @@
       foreach($rows as $index => &$row) {
         foreach($row as $column => &$value) {
           if(array_key_exists("JSON", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["JSON"]) === true) {
+            $value = json_decode($value);
+          }
+
+          if(array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
             $value = json_decode($value);
           }
 
@@ -229,7 +237,7 @@
      * @param integer $depth
      */
     public static function search($table, $q, $limit = "ALL", $depth = 1) {
-      $columns = implode(", ", Config::get("TABLES")[$table]["returning"]);
+      $columns = Moedoo::buildReturn($table);
       $q = preg_replace("/ +/", "|", trim($q));
       $q = preg_replace("/ /", "|", $q);
       $params = [$q];
@@ -300,7 +308,7 @@
      * @return affected rows or null if an error occurred
      */
     public static function select($table, $and = null, $or = null, &$depth = 1, $limit = "ALL", $offset = 0) {
-      $columns = implode(", ", Config::get("TABLES")[$table]["returning"]);
+      $columns = Moedoo::buildReturn($table);
       $query = "SELECT {$columns} FROM ". Config::get("TABLE_PREFIX") ."{$table}";
       $params = [];
 
@@ -379,14 +387,22 @@
 
       foreach($data as $column => $value) {
         array_push($columns, $column);
-        array_push($holders, "\${$count}");
+
+        if(array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
+          array_push($holders, "ST_GeomFromGeoJSON(\${$count})");
+        }
+
+        else {
+          array_push($holders, "\${$count}");
+        }
+
         array_push($params, $value);
         $count++;
       }
 
       $columns = implode(", ", $columns);
       $holders = implode(", ", $holders);
-      $returning = implode(", ", Config::get("TABLES")[$table]["returning"]);
+      $returning = Moedoo::buildReturn($table);
 
       $query = "INSERT INTO ". Config::get("TABLE_PREFIX") ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
 
@@ -438,10 +454,17 @@
       $count = 1;
       $set = [];
       $params = [];
-      $columns = implode(", ", Config::get("TABLES")[$table]["returning"]);
+      $columns = Moedoo::buildReturn($table);
 
       foreach($data as $column => $value) {
-        array_push($set, $column."=\${$count}");
+        if(array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
+          array_push($set, $column."=ST_GeomFromGeoJSON(\${$count})");
+        }
+
+        else {
+          array_push($set, $column."=\${$count}");
+        }
+
         array_push($params, $value);
         $count++;
       }
@@ -499,7 +522,7 @@
      */
     public static function delete($table, $id) {
       $params = [$id];
-      $columns = implode(", ", Config::get("TABLES")[$table]["returning"]);
+      $columns = Moedoo::buildReturn($table);
 
       $query = "DELETE FROM ". Config::get("TABLE_PREFIX") ."{$table} WHERE ". Config::get("TABLES")[$table]["pk"] ."=$1 RETURNING {$columns};";
 

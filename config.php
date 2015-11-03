@@ -59,8 +59,9 @@
       "TABLES" => [
         "about"       => [
           "pk"        => "id",
-          "columns"   => ["id", "data", "creator", "social"],
-          "returning" => ["id", "data", "creator", "social"],
+          "columns"   => ["id", "data", "creator", "geom", "social"],
+          "returning" => ["id", "data", "creator", "geom", "social"],
+          "geometry"  => ["geom"],
           "JSON"      => ["data"],
           "int"       => ["id", "creator", "social"],
           "search"    => ["data"],
