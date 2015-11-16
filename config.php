@@ -11,6 +11,17 @@
 
   class Config {
     private static $CONFIG = [
+      /**
+       * when the API root directory is accessed from a non root directory
+       * set `ROOT_URL` to the root directory for `index.php` file
+       * if this is accessed at the root, leave empty
+       *
+       * example:
+       * http://app.io/path_to_api/api/
+       * `ROOT_URL` will be `/path_to_api`
+       */
+      "ROOT_URL" => "",
+
       "TABLE_PREFIX"  => "tr001_",
       "HASH" => "sha512",
       "SALT" => "canYouSmellWhatTheRockIsCooking",

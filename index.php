@@ -15,20 +15,20 @@
   require "config.php";
 
   $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
-    $r->addRoute("POST", "/authenticate", "authenticate");
-    $r->addRoute("GET", "/all", "all");
+    $r->addRoute("POST", Config::get("ROOT_URL")."/authenticate", "authenticate");
+    $r->addRoute("GET", Config::get("ROOT_URL")."/all", "all");
 
-    $r->addRoute("GET", "/@S3/{filePath:.+}", "S3");
-    $r->addRoute("DELETE", "/@S3/{filePath:.+}", "S3");
-    $r->addRoute("POST", "/S3", "S3");
+    $r->addRoute("GET", Config::get("ROOT_URL")."/@S3/{filePath:.+}", "S3");
+    $r->addRoute("DELETE", Config::get("ROOT_URL")."/@S3/{filePath:.+}", "S3");
+    $r->addRoute("POST", Config::get("ROOT_URL")."/S3", "S3");
 
-    $r->addRoute("OPTIONS", "/[{path:.+}]", "OPTIONS");
+    $r->addRoute("OPTIONS", Config::get("ROOT_URL")."/[{path:.+}]", "OPTIONS");
 
-    $r->addRoute("GET", "/{table}[/{id:\d+}]", "REST");
-    $r->addRoute("GET", "/{table}/{count:count}", "REST");
-    $r->addRoute("POST", "/{table}", "REST");
-    $r->addRoute("PUT", "/{table}/{id:\d+}", "REST");
-    $r->addRoute("DELETE", "/{table}/{id:\d+}", "REST");
+    $r->addRoute("GET", Config::get("ROOT_URL")."/{table}[/{id:\d+}]", "REST");
+    $r->addRoute("GET", Config::get("ROOT_URL")."/{table}/{count:count}", "REST");
+    $r->addRoute("POST", Config::get("ROOT_URL")."/{table}", "REST");
+    $r->addRoute("PUT", Config::get("ROOT_URL")."/{table}/{id:\d+}", "REST");
+    $r->addRoute("DELETE", Config::get("ROOT_URL")."/{table}/{id:\d+}", "REST");
   });
 
   $routeInfo = $dispatcher->dispatch($_SERVER["REQUEST_METHOD"], array_key_exists("REDIRECT_URL", $_SERVER) === true ? $_SERVER["REDIRECT_URL"] : "/");
