@@ -51,6 +51,8 @@
 
       if(array_key_exists("table", $routeInfo[2]) === true) {
         Rock::check($_SERVER["REQUEST_METHOD"], $routeInfo[2]["table"]);
+      } else if($routeInfo[1] === "S3") {
+        Rock::check($_SERVER["REQUEST_METHOD"], "s3");
       }
 
       $RestContainer[$routeInfo[1]]($routeInfo);
