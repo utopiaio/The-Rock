@@ -48,6 +48,19 @@
             $mime = finfo_file($finfo, $filePath);
             finfo_close($finfo);
 
+            $requestHeaders = Rock::getHeaders();
+            $origin = array_key_exists("Origin", $requestHeaders) === true ? $requestHeaders["Origin"] : "*";
+            $origin_stripped = preg_replace("/https?:\/\/|www\./", "", $origin);
+
+            // https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes
+            if(in_array("*", Config::get("CORS_WHITE_LIST")) === true || in_array($origin_stripped, Config::get("CORS_WHITE_LIST")) === true) {
+              header("Access-Control-Allow-Origin: {$origin}");
+              header("Access-Control-Allow-Methods: ". implode(", ", Config::get("CORS_METHODS")));
+              header("Access-Control-Allow-Headers: ". implode(", ", Config::get("CORS_HEADERS")));
+              header("Access-Control-Allow-Credentials: true");
+              header("Access-Control-Max-Age: ". Config::get("CORS_MAX_AGE"));
+            }
+
             header("HTTP/1.1 200 OK");
             header("Content-Type: {$mime}");
 
