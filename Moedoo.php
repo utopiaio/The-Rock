@@ -212,6 +212,55 @@
 
 
     /**
+     * query executor. will catch all exceptions and return a fancy error
+     *
+     * EXCEPTION CODES
+     * 1: unable to update for unknown reason[s]
+     * 2: duplicate constraint
+     * 3: foreign key constraint
+     *
+     * @param  string $table  table on which the query is to be executed on
+     * @param  string $query  query to be executed
+     * @param  array  $params placeholders for query
+     * @return array          result
+     */
+    public static function executeQuery($table, $query, $params, $depth) {
+      $dbConnection = Moedoo::db(Config::get("DB_HOST"), Config::get("DB_PORT"), Config::get("DB_USER"), Config::get("DB_PASSWORD"), Config::get("DB_NAME"));
+
+      if(pg_send_query_params($dbConnection, $query, $params)) {
+        $resource = pg_get_result($dbConnection);
+        $state = pg_result_error_field($resource, PGSQL_DIAG_SQLSTATE);
+
+        if($state == 0) {
+          $rows = Moedoo::cast($table, pg_fetch_all($resource));
+          $rows = Moedoo::referenceFk($table, $rows, $depth);
+          return $rows;
+        } else {
+          switch($state) {
+            // duplicate
+            case "23505":
+              throw new Exception("request violets duplicate constant", 2);
+            break;
+
+            // foreign key
+            case "23503":
+              throw new Exception("request violets foreign key constraint", 3);
+            break;
+
+            default:
+              // we won't be giving detailed error in order "protect" the system
+              throw new Exception("unable to save `". $table ."`", 1);
+            break;
+          }
+        }
+      } else {
+        throw new Exception("unable to save `". $table ."`", 1);
+      }
+    }
+
+
+
+    /**
      * instantiates db connection
      *
      * @param string $host
@@ -369,11 +418,6 @@
     /**
      * executes INSERT command on a given table - one at a time
      *
-     * EXCEPTION CODES
-     * 1: unable to save for unknown[s] reason
-     * 2: duplicate constraint
-     * 3: foreign key constraint
-     *
      * @param string $table - table name without prefix
      * @param array $data - data to be inserted
      * @return array - the newly inserted row
@@ -405,45 +449,13 @@
       $returning = Moedoo::buildReturn($table);
 
       $query = "INSERT INTO ". Config::get("TABLE_PREFIX") ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
-
-      try {
-        $result = pg_query_params($query, $params);
-
-        if(pg_affected_rows($result) === 1) {
-          $rows = Moedoo::cast($table, pg_fetch_all($result));
-          $rows = Moedoo::referenceFk($table, $rows, $depth);
-          return $rows[0];
-        }
-
-        else {
-          throw new Exception("unable to save `". $table ."`", 1);
-        }
-      } catch(Exception $e) {
-        $errorMessage = $e->getMessage();
-
-        if(preg_match("/duplicate/", $errorMessage) === 1) {
-          throw new Exception("request violets duplicate constant", 2);
-        }
-
-        else if(preg_match("/foreign key/", $errorMessage) === 1) {
-          throw new Exception("request violets foreign key constraint", 3);
-        }
-
-        else {
-          throw new Exception($errorMessage, $e->getCode());
-        }
-      }
+      return Moedoo::executeQuery($table, $query, $params, $depth)[0];
     }
 
 
 
     /**
      * executes UPDATE on a given tale entry
-     *
-     * EXCEPTION CODES
-     * 1: unable to update for unknown reason[s]
-     * 2: duplicate constraint
-     * 3: foreign key constraint
      *
      * @param string $table
      * @param array $data - data which to replace on
@@ -473,36 +485,7 @@
       array_push($params, $id);
 
       $query = "UPDATE ". Config::get("TABLE_PREFIX") ."{$table} SET {$set} WHERE ". Config::get("TABLES")[$table]["pk"] ."=\${$count} RETURNING {$columns};";
-
-      try {
-        $result = pg_query_params($query, $params);
-
-        // nothing was affected
-        if(pg_affected_rows($result) === 0) {
-          throw new Exception("unable to update `". $table ."` with resource id `". $id ."`", 1);
-        }
-
-        // everything went as expected
-        else if(pg_affected_rows($result) === 1) {
-          $rows = Moedoo::cast($table, pg_fetch_all($result));
-          $rows = Moedoo::referenceFk($table, $rows, $depth);
-          return $rows[0];
-        }
-      } catch(Exception $e) {
-        $errorMessage = $e->getMessage();
-
-        if(preg_match("/duplicate/", $errorMessage) === 1) {
-          throw new Exception("request violets duplicate constant", 2);
-        }
-
-        else if(preg_match("/foreign key/", $errorMessage) === 1) {
-          throw new Exception("request violets foreign key constraint", 3);
-        }
-
-        else {
-          throw new Exception($errorMessage, $e->getCode());
-        }
-      }
+      return Moedoo::executeQuery($table, $query, $params, $depth)[0];
     }
 
 
