@@ -239,7 +239,7 @@
           switch($state) {
             // duplicate
             case "23505":
-              throw new Exception("request violets duplicate constant", 2);
+              throw new Exception("request violets duplicate constraint", 2);
             break;
 
             // foreign key
