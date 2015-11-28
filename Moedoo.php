@@ -272,7 +272,7 @@
      * @return connection resource
      */
     public static function db($host, $port, $user, $password, $dbname) {
-      return pg_pconnect("host={$host} port={$port} user={$user} password={$password} dbname={$dbname}");
+      return pg_pconnect("host={$host} port={$port} user={$user} password={$password} dbname={$dbname}") or Rock::halt(500, "unable to connect to database");
     }
 
 
