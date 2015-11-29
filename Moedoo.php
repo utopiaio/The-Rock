@@ -231,7 +231,7 @@
         $resource = pg_get_result($dbConnection);
         $state = pg_result_error_field($resource, PGSQL_DIAG_SQLSTATE);
 
-        if($state == 0) {
+        if($state == 0 && pg_fetch_all($resource) !== false) {
           $rows = Moedoo::cast($table, pg_fetch_all($resource));
           $rows = Moedoo::referenceFk($table, $rows, $depth);
           return $rows;
@@ -248,8 +248,17 @@
             break;
 
             default:
+              $queryInsert = preg_match("/^INSERT INTO/", $query);
+              $queryUpdate = preg_match("/^UPDATE/", $query);
+
               // we won't be giving detailed error in order "protect" the system
-              throw new Exception("unable to save `". $table ."`", 1);
+              if($queryInsert === 1) {
+                throw new Exception("unable to save `". $table ."`", 1);
+              } else if ($queryUpdate === 1) {
+                throw new Exception("unable to update `". $table ."`", 1);
+              } else {
+                throw new Exception("error processing query", 1);
+              }
             break;
           }
         }
@@ -272,7 +281,12 @@
      * @return connection resource
      */
     public static function db($host, $port, $user, $password, $dbname) {
-      return pg_pconnect("host={$host} port={$port} user={$user} password={$password} dbname={$dbname}") or Rock::halt(500, "unable to connect to database");
+      $dbConnection = pg_pconnect("host={$host} port={$port} user={$user} password={$password} dbname={$dbname}");
+      if($dbConnection === false) {
+        Rock::halt(500, "unable to connect to database");
+      }
+
+      return $dbConnection;
     }
 
 
