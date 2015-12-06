@@ -222,9 +222,9 @@
      * @param  string $table  table on which the query is to be executed on
      * @param  string $query  query to be executed
      * @param  array  $params placeholders for query
-     * @return array          result
+     * @return array result
      */
-    public static function executeQuery($table, $query, $params, $depth) {
+    public static function executeQuery($table, $query, $params, $depth = 1) {
       $dbConnection = Moedoo::db(Config::get("DB_HOST"), Config::get("DB_PORT"), Config::get("DB_USER"), Config::get("DB_PASSWORD"), Config::get("DB_NAME"));
 
       if(pg_send_query_params($dbConnection, $query, $params)) {
@@ -522,31 +522,7 @@
       $columns = Moedoo::buildReturn($table);
 
       $query = "DELETE FROM ". Config::get("TABLE_PREFIX") ."{$table} WHERE ". Config::get("TABLES")[$table]["pk"] ."=$1 RETURNING {$columns};";
-
-      try {
-        $result = pg_query_params($query, $params);
-
-        // object requested to be deleted doesn't exist in table
-        if(pg_affected_rows($result) === 0) {
-          throw new Exception("`". $table ."` with resource id `". $id ."` does not exist", 1);
-        }
-
-        // everything went as expected
-        else if(pg_affected_rows($result) === 1) {
-          $rows = Moedoo::cast($table, pg_fetch_all($result));
-          return $rows[0];
-        }
-      } catch(Exception $e) {
-        $errorMessage = $e->getMessage();
-
-        if(preg_match("/foreign key/", $errorMessage) === 1) {
-          throw new Exception("request violets foreign key constraint", 3);
-        }
-
-        else {
-          throw new Exception($errorMessage, $e->getCode());
-        }
-      }
+      return Moedoo::executeQuery($table, $query, $params)[0];
     }
   }
 ?>
