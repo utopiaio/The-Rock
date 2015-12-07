@@ -212,29 +212,30 @@
 
 
     /**
-     * query executor. will catch all exceptions and return a fancy error
+     * query executor
      *
      * EXCEPTION CODES
      * 1: unable to update for unknown reason[s]
      * 2: duplicate constraint
      * 3: foreign key constraint
      *
-     * @param  string $table  table on which the query is to be executed on
-     * @param  string $query  query to be executed
-     * @param  array  $params placeholders for query
-     * @return array result
+     * @param  String $table
+     * @param  String $query
+     * @param  Array $params
+     * @return Array
      */
-    public static function executeQuery($table, $query, $params, $depth = 1) {
+    public static function executeQuery($table, $query, $params = []) {
       $dbConnection = Moedoo::db(Config::get("DB_HOST"), Config::get("DB_PORT"), Config::get("DB_USER"), Config::get("DB_PASSWORD"), Config::get("DB_NAME"));
 
       if(pg_send_query_params($dbConnection, $query, $params)) {
         $resource = pg_get_result($dbConnection);
         $state = pg_result_error_field($resource, PGSQL_DIAG_SQLSTATE);
-
-        if($state == 0 && pg_fetch_all($resource) !== false) {
-          $rows = Moedoo::cast($table, pg_fetch_all($resource));
-          $rows = Moedoo::referenceFk($table, $rows, $depth);
-          return $rows;
+        if($state == 0) {
+          if($resource === false || pg_fetch_all($resource) === false) {
+            return [];
+          } else {
+            return pg_fetch_all($resource);
+          }
         } else {
           switch($state) {
             // duplicate
@@ -248,14 +249,20 @@
             break;
 
             default:
-              $queryInsert = preg_match("/^INSERT INTO/", $query);
+              $querySelect = preg_match("/^SELECT/", $query);
+              $queryInsert = preg_match("/^INSERT/", $query);
               $queryUpdate = preg_match("/^UPDATE/", $query);
+              $queryDelete = preg_match("/^DELETE/", $query);
 
               // we won't be giving detailed error in order "protect" the system
-              if($queryInsert === 1) {
+              if($querySelect === 1) {
+                throw new Exception("unable to select from table `". $table ."`", 1);
+              } else if($queryInsert === 1) {
                 throw new Exception("unable to save `". $table ."`", 1);
               } else if ($queryUpdate === 1) {
                 throw new Exception("unable to update `". $table ."`", 1);
+              } else if($queryDelete === 1) {
+                throw new Exception("unable to delete record from table `". $table ."`", 1);
               } else {
                 throw new Exception("error processing query", 1);
               }
@@ -322,14 +329,14 @@
 
       $order_by = substr($order_by, 0, -2);
       $limit = "LIMIT {$limit}";
-      $result = pg_query_params("{$query} {$where} {$order_by} {$limit};", $params);
+      $rows = Moedoo::executeQuery($table, "{$query} {$where} {$order_by} {$limit};", $params);
 
-      if(pg_fetch_all($result) === false) {
+      if(count($rows) === 0) {
         return [];
       }
 
       else {
-        $rows = Moedoo::cast($table, pg_fetch_all($result));
+        $rows = Moedoo::cast($table, $rows);
         $rows = Moedoo::referenceFk($table, $rows, $depth);
         return $rows;
       }
@@ -346,12 +353,12 @@
     public static function count($table) {
       $query = "SELECT count(". Config::get("TABLES")[$table]["pk"] .") as count FROM ". Config::get("TABLE_PREFIX") ."{$table};";
       $params = [];
-      $result = pg_query_params($query, $params);
+      $rows = Moedoo::executeQuery($table, $query, $params);
 
-      if(pg_fetch_all($result) === false) {
+      if(count($rows) === 0) {
         $count = 0;
       } else {
-        $count = (int)pg_fetch_all($result)[0]["count"];
+        $count = (int)$rows[0]["count"];
       }
 
       return $count;
@@ -414,14 +421,14 @@
       }
 
       $query .= "LIMIT {$limit} OFFSET {$offset};";
-      $result = pg_query_params($query, $params);
+      $rows = Moedoo::executeQuery($table, $query, $params);
 
-      if(pg_fetch_all($result) === false) {
+      if(count($rows) === 0) {
         return [];
       }
 
       else {
-        $rows = Moedoo::cast($table, pg_fetch_all($result));
+        $rows = Moedoo::cast($table, $rows);
         $rows = Moedoo::referenceFk($table, $rows, $depth);
         return $rows;
       }
@@ -463,7 +470,18 @@
       $returning = Moedoo::buildReturn($table);
 
       $query = "INSERT INTO ". Config::get("TABLE_PREFIX") ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
-      return Moedoo::executeQuery($table, $query, $params, $depth)[0];
+      $rows = Moedoo::executeQuery($table, $query, $params);
+
+      // currently we're only supporting single row insert
+      if(count($rows) === 1) {
+        $rows = Moedoo::cast($table, $rows);
+        $rows = Moedoo::referenceFk($table, $rows, $depth);
+        return $rows[0];
+      }
+
+      else {
+        throw new Exception("error processing query", 1);
+      }
     }
 
 
@@ -499,7 +517,18 @@
       array_push($params, $id);
 
       $query = "UPDATE ". Config::get("TABLE_PREFIX") ."{$table} SET {$set} WHERE ". Config::get("TABLES")[$table]["pk"] ."=\${$count} RETURNING {$columns};";
-      return Moedoo::executeQuery($table, $query, $params, $depth)[0];
+      $rows = Moedoo::executeQuery($table, $query, $params);
+
+      // currently we're only supporting single row update
+      if(count($rows) === 1) {
+        $rows = Moedoo::cast($table, $rows);
+        $rows = Moedoo::referenceFk($table, $rows, $depth);
+        return $rows[0];
+      }
+
+      else {
+        throw new Exception("error processing query", 1);
+      }
     }
 
 
@@ -522,7 +551,16 @@
       $columns = Moedoo::buildReturn($table);
 
       $query = "DELETE FROM ". Config::get("TABLE_PREFIX") ."{$table} WHERE ". Config::get("TABLES")[$table]["pk"] ."=$1 RETURNING {$columns};";
-      return Moedoo::executeQuery($table, $query, $params)[0];
+      $rows = Moedoo::executeQuery($table, $query, $params);
+
+      // currently we're only supporting single row deletion
+      if(count($rows) === 1) {
+        return $rows[0];
+      }
+
+      else {
+        throw new Exception("error processing query", 1);
+      }
     }
   }
 ?>
