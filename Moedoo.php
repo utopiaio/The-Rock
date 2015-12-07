@@ -539,8 +539,7 @@
      * there comes a time were you want to just delete
      *
      * EXCEPTION CODES
-     * 1: unable to delete because the resource doesn't exist in the first place
-     * 3: foreign key constraint
+     * 1: unable to update for unknown reason[s]
      *
      * @param string $table
      * @param integer $id - id on which to delete on
@@ -556,9 +555,9 @@
       // currently we're only supporting single row deletion
       if(count($rows) === 1) {
         return $rows[0];
-      }
-
-      else {
+      } else if(count($rows) === 0) {
+        throw new Exception("`". $table ."` with resource id `". $id ."` does not exist", 1);
+      } else {
         throw new Exception("error processing query", 1);
       }
     }
