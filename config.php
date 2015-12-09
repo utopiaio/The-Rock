@@ -50,12 +50,12 @@
       "CORS_HEADERS" => ["Accept", "Content-Type", "Content-Range", "Content-Disposition", "X-Access-Token"],
       "CORS_MAX_AGE" => "86400",
 
-      // requests that require authentication
+      // requests that require authentication + tailored permission
       "AUTH_REQUESTS" => [
-        "GET"     => [],
-        "POST"    => [],
-        "PUT"     => ["about", "social"],
-        "DELETE"  => []
+        "GET"     => ["story"],
+        "POST"    => ["story"],
+        "PUT"     => ["about", "social", "story"],
+        "DELETE"  => ["story"]
       ],
 
       // request that are NOT allowed
@@ -119,15 +119,24 @@
         ],
         "users"       => [
           "pk"        => "user_id",
-          "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_type", "user_status", "user_friends"],
-          "returning" => ["user_id", "user_full_name", "user_username", "user_type", "user_status", "user_friends"],
-          "int"       => ["user_id"],
+          "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_status", "user_group", "user_friends"],
+          "returning" => ["user_id", "user_full_name", "user_username", "user_status", "user_friends", "user_group"],
+          "int"       => ["user_id", "user_group"],
           "[int]"     => ["user_friends"],
           "bool"      => ["user_status"],
-          "search"    => ["user_full_name", "user_username", "user_type"],
+          "search"    => ["user_full_name", "user_username"],
           "fk"       => [
+            "user_group" => ["table" => "user_groups", "references" => "user_group_id"],
             "[user_friends]" => ["table" => "users", "references" => "user_id"]
           ]
+        ],
+        "user_groups" => [
+          "pk"        => "user_group_id",
+          "columns"   => ["user_group_id", "user_group_name", "user_group_has_permission_create_story", "user_group_has_permission_read_story", "user_group_has_permission_update_story", "user_group_has_permission_delete_story", "user_group_status"],
+          "returning" => ["user_group_id", "user_group_name", "user_group_has_permission_create_story", "user_group_has_permission_read_story", "user_group_has_permission_update_story", "user_group_has_permission_delete_story", "user_group_status"],
+          "int"       => ["user_group_id"],
+          "bool"      => ["user_group_has_permission_create_story", "user_group_has_permission_read_story", "user_group_has_permission_update_story", "user_group_has_permission_delete_story", "user_group_status"],
+          "search"    => ["user_group_name"]
         ]
       ]
     ];
