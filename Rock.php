@@ -1,12 +1,13 @@
 <?php
+  use Firebase\JWT\JWT;
+
   class Rock {
     /**
      * checks jwt and authenticates or halts execution
      *
-     * @param string $role - user role to match against
      * @return array - user info from db
      */
-    public static function authenticated($role = null) {
+    public static function authenticated($method, $table) {
       $requestHeaders = Rock::getHeaders();
 
       if(array_key_exists(Config::get("JWT_HEADER"), $requestHeaders) === true) {
@@ -16,24 +17,50 @@
           Rock::halt(401, "invalid authorization token");
         }
 
-        $depth = 0;
+        $depth = 1;
         $result = Moedoo::select("users", [Config::get("TABLES")["users"]["pk"] => $decoded["id"]], null, $depth);
 
         if(count($result) === 1) {
           $user = $result[0];
+          $permissionMap = ["GET" => "read", "POST" => "create", "PUT" => "update", "DELETE" => "delete"];
 
+          /**
+           * authentication pseudo logic steps
+           *
+           * 1. check user status
+           * 2. check group status
+           * 3. check tailored permission
+           */
+
+          // 1
           if($user["user_status"] === false) {
             Rock::halt(401, "account has been suspended");
           }
 
-          else {
-            if($role === null || $role === $user["user_type"]) {
-              return $user;
+          // 2
+          else if(is_null($user["user_group"]) === true) {
+            Rock::halt(401, "account permission set can not be identified");
+          }
+
+          // 2
+          else if($user["user_group"]["user_group_status"] === false) {
+            Rock::halt(401, "user group `{$user["user_group"]["user_group_name"]}` has been suspended");
+          }
+
+          // 3
+          else if(array_key_exists("user_group_has_permission_{$permissionMap[$method]}_{$table}", $user["user_group"]) === true) {
+            if($user["user_group"]["user_group_has_permission_{$permissionMap[$method]}_{$table}"] === true) {
+              // all permission checks are a go, proceed
+              // any post-pre authentication logic go here
             }
 
             else {
-              Rock::halt(401, "role mismatch");
+              Rock::halt(401, "account doesn't have `{$permissionMap[$method]}` permission on table `{$table}`");
             }
+          }
+
+          else {
+            Rock::halt(401, "account doesn't have `{$permissionMap[$method]}` permission on table `{$table}`");
           }
         }
 
@@ -94,6 +121,7 @@
 
     /**
      * runs security check on CRUD mapping functions
+     *
      * 1: checks weather or not table exists in `config` file
      * 2: checks if $method + $table is restricted calls authentication
      * 3: checks if $method + $table is forbidden execution is stopped
@@ -102,7 +130,7 @@
      * @param string $table
      * @param string $role
      */
-    public static function check($method, $table, $role = null) {
+    public static function check($method, $table) {
       if(array_key_exists($table, Config::get("TABLES")) === false) {
         Rock::halt(404, "requested resource `". $table ."` does not exist");
       }
@@ -112,7 +140,8 @@
       }
 
       if(in_array($table, Config::get("AUTH_REQUESTS")[$method]) === true) {
-        $role === null ? Rock::authenticated() : Rock::authenticated($role);
+        // this is where the tailored permission check is applied...
+        Rock::authenticated($method, $table);
       }
     }
 
