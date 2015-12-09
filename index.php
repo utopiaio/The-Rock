@@ -55,7 +55,7 @@
 
       try {
         $RestContainer[$routeInfo[1]]($routeInfo);
-      } catch (Exception $e) {
+      } catch(Exception $e) {
         Rock::halt(400, $e->getMessage());
       }
     break;
