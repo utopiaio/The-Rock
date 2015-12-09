@@ -1,4 +1,6 @@
 <?php
+  use Firebase\JWT\JWT;
+
   class Rock {
     /**
      * checks jwt and authenticates or halts execution
