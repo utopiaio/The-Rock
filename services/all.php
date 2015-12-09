@@ -8,15 +8,16 @@
       $tables = Config::get("TABLES");
       unset($tables["users"]);
       unset($tables["s3"]);
-      $AuthGETRequests = Config::get("AUTH_REQUESTS")["GET"];
-      $AuthGETForbiddenRequests = Config::get("FORBIDDEN_REQUESTS")["GET"];
+      $authGETRequests = Config::get("AUTH_REQUESTS")["GET"];
+      $authGETForbiddenRequests = Config::get("FORBIDDEN_REQUESTS")["GET"];
+      $public = [];
 
       foreach($tables as $tableName => $property) {
-        if(!in_array($tableName, $AuthGETRequests) && !in_array($tableName, $AuthGETForbiddenRequests)) {
-          $tables[$tableName] = Moedoo::select($tableName);
+        if(!in_array($tableName, $authGETRequests) && !in_array($tableName, $authGETForbiddenRequests)) {
+          $public[$tableName] = Moedoo::select($tableName);
         }
       }
 
-      Rock::JSON(["tables" => $tables], 200);
+      Rock::JSON(["tables" => $public], 200);
     };
   };
