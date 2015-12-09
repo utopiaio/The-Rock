@@ -1,18 +1,16 @@
 <?php
-  require "lib/fast-route/src/bootstrap.php";
-  require "lib/pimple/Container.php";
-  require "lib/pimple/ServiceProviderInterface.php";
-  require "lib/jwt/Authentication/JWT.php";
-  require "lib/jwt/Exceptions/BeforeValidException.php";
-  require "lib/jwt/Exceptions/ExpiredException.php";
-  require "lib/jwt/Exceptions/SignatureInvalidException.php";
-  require "lib/Blueimp/UploadHandler.php";
-  require "lib/Blueimp/TheRockUploadHandler.php";
-  require "Moedoo.php";
-  require "Rock.php";
-  require "Util.php";
-  require "RestContainer.php";
-  require "config.php";
+  require __DIR__ ."/vendor/autoload.php";
+  require __DIR__ ."/lib/Blueimp/UploadHandler.php";
+  require __DIR__ ."/lib/Blueimp/TheRockUploadHandler.php";
+  require __DIR__ ."/config.php";
+  require __DIR__ ."/Moedoo.php";
+  require __DIR__ ."/Rock.php";
+  require __DIR__ ."/Util.php";
+  require __DIR__ ."/services/REST.php";
+  require __DIR__ ."/services/OPTIONS.php";
+  require __DIR__ ."/services/all.php";
+  require __DIR__ ."/services/auth.php";
+  require __DIR__ ."/services/S3.php";
 
   $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute("POST", Config::get("ROOT_URL")."/authenticate", "authenticate");
