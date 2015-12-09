@@ -53,7 +53,11 @@
         Rock::check($_SERVER["REQUEST_METHOD"], "s3");
       }
 
-      $RestContainer[$routeInfo[1]]($routeInfo);
+      try {
+        $RestContainer[$routeInfo[1]]($routeInfo);
+      } catch (Exception $e) {
+        Rock::halt(400, $e->getMessage());
+      }
     break;
   }
 ?>
