@@ -10,12 +10,6 @@
 
       switch($_SERVER["REQUEST_METHOD"]) {
         case "GET":
-          switch($table) {
-            case "users":
-              Rock::authenticated("ADMINISTRATOR");
-            break;
-          }
-
           if(isset($_GET["q"]) === true && $id === -1) {
             $limit = (isset($_GET["limit"]) === true && preg_match("/^\d+$/", $_GET["limit"])) ? $_GET["limit"] : "ALL";
             Rock::JSON(Moedoo::search($table, $_GET["q"], $limit), 200);
@@ -61,8 +55,6 @@
 
           switch($table) {
             case "users":
-              Rock::authenticated("ADMINISTRATOR");
-
               if(array_key_exists("user_username", $body) === true) {
                 $body["user_username"] = strtolower($body["user_username"]);
                 $body["user_username"] = preg_replace("/ /", "_", $body["user_username"]);
@@ -90,8 +82,6 @@
 
           switch($table) {
             case "users":
-              Rock::authenticated("ADMINISTRATOR");
-
               if(array_key_exists("user_username", $body) === true) {
                 $body["user_username"] = strtolower($body["user_username"]);
                 $body["user_username"] = preg_replace("/ /", "_", $body["user_username"]);
@@ -115,12 +105,6 @@
         break;
 
         case "DELETE":
-          switch($table) {
-            case "users":
-              Rock::authenticated("ADMINISTRATOR");
-            break;
-          }
-
           try {
             $result = Moedoo::delete($table, $id);
           } catch(Exception $e) {
