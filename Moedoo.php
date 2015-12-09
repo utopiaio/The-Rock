@@ -270,7 +270,7 @@
           }
         }
       } else {
-        throw new Exception("unable to save `". $table ."`", 1);
+        throw new Exception("unable to process query on table `". $table ."`", 1);
       }
     }
 
