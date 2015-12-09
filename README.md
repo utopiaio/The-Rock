@@ -36,9 +36,9 @@ Moedoo::count($table) // returns row count on table
 
 ####Rock
 ```php
-Rock::authenticated($role) // authenticates the JWT
+Rock::authenticated($method, $table) // authenticates the JWT
 Rock::authenticate($username, $password) // authenticates and returns JWT
-Rock::check($method, $table, $role) // runs security checks via `config`
+Rock::check($method, $table) // runs security checks via `config`
 Rock::getBody($table) // validates and returns request body
 Rock::JSON($data, $status) // returns JSON
 Rock::halt($status, $message) // halts execution
