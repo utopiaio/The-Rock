@@ -163,15 +163,15 @@
           }
 
           if(array_key_exists("int", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["int"]) === true) {
-            $value = (int)$value;
+            $value = is_numeric($value) === true ? (int)$value : null;
           }
 
           if(array_key_exists("float", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["float"]) === true) {
-            $value = (float)$value;
+            $value = is_numeric($value) === true ? (float)$value : null;
           }
 
           if(array_key_exists("double", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["double"]) === true) {
-            $value = (double)$value;
+            $value = is_numeric($value) === true ? (double)$value : null;
           }
 
           if(array_key_exists("bool", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["bool"]) === true) {
@@ -184,7 +184,7 @@
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
             foreach($value as $index => &$v) {
-              $v = (int)$v;
+              $v = is_numeric($v) === true ? (int)$v : null;
             }
           }
 
@@ -192,7 +192,7 @@
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
             foreach($value as $index => &$v) {
-              $v = (float)$v;
+              $v = is_numeric($v) === true ? (float)$v : null;
             }
           }
 
@@ -200,7 +200,7 @@
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
             foreach($value as $index => &$v) {
-              $v = (double)$v;
+              $v = is_numeric($v) === true ? (double)$v : null;
             }
           }
         }
