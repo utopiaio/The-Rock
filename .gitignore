@@ -1,2 +1,6 @@
 *.paw
 .DS_Store
+composer.lock
+composer.phar
+!vendor/Blueimp
+vendor
