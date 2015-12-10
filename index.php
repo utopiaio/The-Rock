@@ -13,7 +13,9 @@
   require __DIR__ ."/services/S3.php";
 
   $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
-    $r->addRoute("POST", Config::get("ROOT_URL")."/authenticate", "authenticate");
+    $r->addRoute("GET", Config::get("ROOT_URL")."/auth", "auth");
+    $r->addRoute("POST", Config::get("ROOT_URL")."/auth", "auth");
+
     $r->addRoute("GET", Config::get("ROOT_URL")."/all", "all");
 
     $r->addRoute("GET", Config::get("ROOT_URL")."/@S3/{filePath:.+}", "S3");

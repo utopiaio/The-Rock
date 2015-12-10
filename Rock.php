@@ -97,6 +97,14 @@
           Rock::halt(401, "account has been suspended");
         }
 
+        else if(is_null($user["user_group"]) === true) {
+          Rock::halt(401, "account permission set can not be identified");
+        }
+
+        else if($user["user_group"]["user_group_status"] === false) {
+          Rock::halt(401, "user group `{$user["user_group"]["user_group_name"]}` has been suspended");
+        }
+
         // all good, proceeding with authentication...
         else {
           $token = [
@@ -242,7 +250,7 @@
       $headers = getallheaders();
 
       if($headers === false) {
-        throw new Exception("Error Processing Request", 5);
+        throw new Exception("Error Processing Request", 4);
       }
 
       return $headers;
