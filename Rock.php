@@ -55,12 +55,12 @@
             }
 
             else {
-              Rock::halt(401, "account doesn't have `{$permissionMap[$method]}` permission on table `{$table}`");
+              Rock::halt(401, "account doesn't have `{$permissionMap[$method]}` permission on this table");
             }
           }
 
           else {
-            Rock::halt(401, "account doesn't have `{$permissionMap[$method]}` permission on table `{$table}`");
+            Rock::halt(401, "account doesn't have `{$permissionMap[$method]}` permission on this table");
           }
         }
 
