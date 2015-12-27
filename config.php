@@ -43,6 +43,7 @@
       "DB_PASSWORD" => "\"\"",
       "DB_PORT" => 5432,
       "DB_NAME" => "rock",
+      "DEFAULT_DEPTH" => 1,
 
       // CORS
       "CORS_WHITE_LIST" => ["*", "rock.io", "foo.com"],
