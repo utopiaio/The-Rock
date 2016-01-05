@@ -3,6 +3,7 @@
     public static $codes = [
       100 => "Continue",
       101 => "Switching Protocols",
+      102 => "Processing",
 
       200 => "OK",
       201 => "Created",
@@ -11,6 +12,7 @@
       204 => "No Content",
       205 => "Reset Content",
       206 => "Partial Content",
+      207 => "Multi-Status",
 
       300 => "Multiple Choices",
       301 => "Moved Permanently",
@@ -38,13 +40,27 @@
       415 => "Unsupported Media Type",
       416 => "Requested Range Not Satisfiable",
       417 => "Expectation Failed",
+      418 => "I'm a teapot",
+      422 => "Unprocessable entity",
+      423 => "Locked",
+      424 => "Failed Dependency",
+      425 => "Unordered Collection",
+      426 => "Upgrade Required",
+      428 => "Precondition Required",
+      429 => "Too Many Requests",
+      431 => "Request Header Fields Too Large",
 
       500 => "Internal Server Error",
       501 => "Not Implemented",
       502 => "Bad Gateway",
       503 => "Service Unavailable",
       504 => "Gateway Timeout",
-      505 => "HTTP Version Not Supported"
+      505 => "HTTP Version Not Supported",
+      506 => "Variant Also Negotiates",
+      507 => "Insufficient Storage",
+      509 => "Bandwidth Limit Exceeded",
+      510 => "Not Extended",
+      511 => "Network Authentication Required"
     ];
 
 
