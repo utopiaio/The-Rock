@@ -315,30 +315,37 @@
       $where = "";
       $order_by = "ORDER BY";
 
-      // building vector...
-      foreach(Config::get("TABLES")[$table]["search"] as $key => $value) {
-        $where .= "to_tsvector({$value}) @@ to_tsquery($1) OR ";
-      }
-
-      $where = substr($where, 0, -4);
-
-      // building rank...
-      foreach(Config::get("TABLES")[$table]["search"] as $key => $value) {
-        $order_by .= " ts_rank(to_tsvector($value), to_tsquery($1)) DESC, ";
-      }
-
-      $order_by = substr($order_by, 0, -2);
-      $limit = "LIMIT {$limit}";
-      $rows = Moedoo::executeQuery($table, "{$query} {$where} {$order_by} {$limit};", $params);
-
-      if(count($rows) === 0) {
-        return [];
+      // model doesn't have any full-text fields
+      if(count(Config::get("TABLES")[$table]["search"]) === 0) {
+        Rock::halt(422, "table `{$table}` has no searchable fields");
       }
 
       else {
-        $rows = Moedoo::cast($table, $rows);
-        $rows = Moedoo::referenceFk($table, $rows, $depth);
-        return $rows;
+        // building vector...
+        foreach(Config::get("TABLES")[$table]["search"] as $key => $value) {
+          $where .= "to_tsvector({$value}) @@ to_tsquery($1) OR ";
+        }
+
+        $where = substr($where, 0, -4);
+
+        // building rank...
+        foreach(Config::get("TABLES")[$table]["search"] as $key => $value) {
+          $order_by .= " ts_rank(to_tsvector($value), to_tsquery($1)) DESC, ";
+        }
+
+        $order_by = substr($order_by, 0, -2);
+        $limit = "LIMIT {$limit}";
+        $rows = Moedoo::executeQuery($table, "{$query} {$where} {$order_by} {$limit};", $params);
+
+        if(count($rows) === 0) {
+          return [];
+        }
+
+        else {
+          $rows = Moedoo::cast($table, $rows);
+          $rows = Moedoo::referenceFk($table, $rows, $depth);
+          return $rows;
+        }
       }
     }
 
