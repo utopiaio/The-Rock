@@ -1,6 +1,4 @@
 <?php
-  use Firebase\JWT\JWT;
-
   class Rock {
     /**
      * checks jwt and authenticates or halts execution
@@ -12,7 +10,7 @@
 
       if(array_key_exists(Config::get("JWT_HEADER"), $requestHeaders) === true) {
         try {
-          $decoded = (array)JWT::decode($requestHeaders[Config::get("JWT_HEADER")], Config::get("JWT_KEY"), ["HS256"]);
+          $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get("JWT_HEADER")], Config::get("JWT_KEY"), ["HS256"]);
         } catch(Exception $e) {
           Rock::halt(401, "invalid authorization token");
         }
@@ -115,7 +113,7 @@
 
           // TODO
           // make a fingerprint so that the token stays locked-down
-          $jwt = JWT::encode($token, Config::get("JWT_KEY"));
+          $jwt = Firebase\JWT\JWT::encode($token, Config::get("JWT_KEY"));
           Rock::JSON(["jwt" => $jwt, "user" => $user], 202);
         }
       }
