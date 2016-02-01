@@ -1,6 +1,5 @@
 <?php
-  use Pimple\Container;
-  $RestContainer = new Container();
+  $RestContainer = new Pimple\Container();
 
   $RestContainer["REST"] = function($c) {
     return function($routeInfo) {
