@@ -47,7 +47,7 @@
     break;
 
     case FastRoute\Dispatcher::FOUND:
-      Moedoo::db(Config::get("DB_HOST"), Config::get("DB_PORT"), Config::get("DB_USER"), Config::get("DB_PASSWORD"), Config::get("DB_NAME"));
+      $db = Moedoo::db(Config::get("DB_HOST"), Config::get("DB_PORT"), Config::get("DB_USER"), Config::get("DB_PASSWORD"), Config::get("DB_NAME"));
 
       if(array_key_exists("table", $routeInfo[2]) === true) {
         Rock::check($_SERVER["REQUEST_METHOD"], $routeInfo[2]["table"]);
@@ -57,6 +57,7 @@
 
       try {
         $RestContainer[$routeInfo[1]]($routeInfo);
+        pg_close($db);
       } catch(Exception $e) {
         Rock::halt(400, $e->getMessage());
       }
