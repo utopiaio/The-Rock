@@ -158,4 +158,3 @@
       return Config::$CONFIG[$key];
     }
   }
-?>

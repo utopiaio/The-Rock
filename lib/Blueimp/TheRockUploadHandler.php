@@ -64,4 +64,3 @@
       Rock::JSON(json_decode($str), 202);
     }
   }
-?>
