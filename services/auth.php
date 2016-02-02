@@ -13,7 +13,7 @@
             }
 
             $depth = 1;
-            $result = Moedoo::select("users", [Config::get("TABLES")["users"]["pk"] => $decoded["id"]], null, $depth);
+            $result = Moedoo::select("user", [Config::get("TABLES")["user"]["pk"] => $decoded["id"]], null, $depth);
 
             if(count($result) === 1) {
               $user = $result[0];

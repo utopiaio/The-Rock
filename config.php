@@ -78,7 +78,7 @@
           "int"       => ["id", "creator", "social"],
           "search"    => ["data"],
           "fk"        => [
-            "creator" => ["table" => "users", "references" => "user_id"],
+            "creator" => ["table" => "user", "references" => "user_id"],
             "social"  => ["table" => "social", "references" => "id"]
           ]
         ],
@@ -90,48 +90,48 @@
         ],
         "social"      => [
           "pk"        => "id",
-          "columns"   => ["id", "data", "users"],
-          "returning" => ["id", "data", "users"],
+          "columns"   => ["id", "data", "\"user\""],
+          "returning" => ["id", "data", "\"user\""],
           "JSON"      => ["data"],
-          "int"       => ["id", "users"],
+          "int"       => ["id", "\"user\""],
           "search"    => ["data"],
           "fk"        => [
-            "users" => ["table" => "users", "references" => "user_id"]
+            "user" => ["table" => "user", "references" => "user_id"]
           ]
         ],
         "story"       => [
           "pk"        => "id",
-          "columns"   => ["id", "story", "by", "tags"],
-          "returning" => ["id", "story", "by", "tags"],
+          "columns"   => ["id", "story", "by", "tag"],
+          "returning" => ["id", "story", "by", "tag"],
           "int"       => ["id", "by"],
-          "[int]"     => ["tags"],
+          "[int]"     => ["tag"],
           "search"    => ["story"],
           "fk"        => [
-            "by" => ["table" => "users", "references" => "user_id"],
-            "[tags]" => ["table" => "tags", "references" => "id"]
+            "by" => ["table" => "user", "references" => "user_id"],
+            "[tag]" => ["table" => "tag", "references" => "id"]
           ]
         ],
-        "tags"        => [
+        "tag"        => [
           "pk"        => "id",
           "columns"   => ["id", "tag"],
           "returning" => ["id", "tag"],
           "int"       => ["id"],
           "search"    => ["tag"]
         ],
-        "users"       => [
+        "user"       => [
           "pk"        => "user_id",
-          "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_status", "user_group", "user_friends"],
-          "returning" => ["user_id", "user_full_name", "user_username", "user_status", "user_friends", "user_group"],
+          "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_status", "user_group", "user_friend"],
+          "returning" => ["user_id", "user_full_name", "user_username", "user_status", "user_friend", "user_group"],
           "int"       => ["user_id", "user_group"],
-          "[int]"     => ["user_friends"],
+          "[int]"     => ["user_friend"],
           "bool"      => ["user_status"],
           "search"    => ["user_full_name", "user_username"],
           "fk"       => [
-            "user_group" => ["table" => "user_groups", "references" => "user_group_id"],
-            "[user_friends]" => ["table" => "users", "references" => "user_id"]
+            "user_group" => ["table" => "user_group", "references" => "user_group_id"],
+            "[user_friend]" => ["table" => "user", "references" => "user_id"]
           ]
         ],
-        "user_groups" => [
+        "user_group" => [
           "pk"        => "user_group_id",
           "columns"   => ["user_group_id", "user_group_name", "user_group_has_permission_create_story", "user_group_has_permission_read_story", "user_group_has_permission_update_story", "user_group_has_permission_delete_story", "user_group_status"],
           "returning" => ["user_group_id", "user_group_name", "user_group_has_permission_create_story", "user_group_has_permission_read_story", "user_group_has_permission_update_story", "user_group_has_permission_delete_story", "user_group_status"],
