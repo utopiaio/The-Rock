@@ -5,18 +5,15 @@
         case "GET":
           $file = $routeInfo[2]["filePath"];
           $filePath = Config::get("S3_UPLOAD_DIR") ."/". $file;
+          $mime = Rock::MIMEIsAllowed($filePath);
 
           if(file_exists($filePath) === true) {
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($finfo, $filePath);
-            finfo_close($finfo);
-
             $requestHeaders = Rock::getHeaders();
             $origin = array_key_exists("Origin", $requestHeaders) === true ? $requestHeaders["Origin"] : "*";
-            $origin_stripped = preg_replace("/https?:\/\/|www\./", "", $origin);
+            $originStripped = preg_replace("/https?:\/\/|www\./", "", $origin);
 
             // https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes
-            if(in_array("*", Config::get("CORS_WHITE_LIST")) === true || in_array($origin_stripped, Config::get("CORS_WHITE_LIST")) === true) {
+            if(in_array("*", Config::get("CORS_WHITE_LIST")) === true || in_array($originStripped, Config::get("CORS_WHITE_LIST")) === true) {
               header("Access-Control-Allow-Origin: {$origin}");
               header("Access-Control-Allow-Methods: ". implode(", ", Config::get("CORS_METHODS")));
               header("Access-Control-Allow-Headers: ". implode(", ", Config::get("CORS_HEADERS")));
@@ -27,7 +24,7 @@
             header("HTTP/1.1 200 OK");
             header("Content-Type: {$mime}");
 
-            if(preg_match("/(?i)\.(gif|jpe?g|png)$/", $file) === 0) {
+            if($mime === false) {
               header("Content-Disposition: attachment;");
             }
 
@@ -49,7 +46,7 @@
               if ($mime === false || $files['error'][$index] > 0) {
                 unlink($files['tmp_name'][$index]);
               } else {
-                $name = Util::randomString(8) .'.'. substr($files['name'][$index], strrpos($files['name'][$index], '.') + 1);
+                $name = Util::randomString(Config::get('S3_FILE_NAME_SIZE')) .'.'. substr($files['name'][$index], strrpos($files['name'][$index], '.') + 1);
                 $size = $files['size'][$index];
                 $url = Rock::getUrl() .'/'. Config::get('S3_UPLOAD_URL') .'/'. $name;
                 move_uploaded_file($files['tmp_name'][$index], Config::get('S3_UPLOAD_DIR') .'/'. $name);
