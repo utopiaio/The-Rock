@@ -1,8 +1,6 @@
 <?php
   require __DIR__ ."/vendor/autoload.php";
   require __DIR__ ."/config.php";
-  require __DIR__ ."/lib/Blueimp/UploadHandler.php";
-  require __DIR__ ."/lib/Blueimp/TheRockUploadHandler.php";
   require __DIR__ ."/Moedoo.php";
   require __DIR__ ."/Rock.php";
   require __DIR__ ."/Util.php";

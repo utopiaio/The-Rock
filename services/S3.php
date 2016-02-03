@@ -40,10 +40,25 @@
         break;
 
         case "POST":
-          $uploadHandler = new TheRockUploadHandler([
-            "upload_dir" => Config::get("S3_UPLOAD_DIR") ."/",
-            "upload_url" =>  Rock::getUrl() ."/". Config::get("S3_UPLOAD_URL") ."/"
-          ]);
+          $savedFiles = [];
+
+          foreach ($_FILES as $key => $files) {
+            foreach ($files['name'] as $index => $file) {
+              $mime = Rock::MIMEIsAllowed($files['tmp_name'][$index]);
+
+              if ($mime === false || $files['error'][$index] > 0) {
+                unlink($files['tmp_name'][$index]);
+              } else {
+                $name = Util::randomString(8) .'.'. substr($files['name'][$index], strrpos($files['name'][$index], '.') + 1);
+                $size = $files['size'][$index];
+                $url = Rock::getUrl() .'/'. Config::get('S3_UPLOAD_URL') .'/'. $name;
+                move_uploaded_file($files['tmp_name'][$index], Config::get('S3_UPLOAD_DIR') .'/'. $name);
+                array_push($savedFiles, Moedoo::insert('s3', ['name' => $name, 'size' => $size, 'url' => $url, 'type' => $mime]));
+              }
+            }
+          }
+
+          Rock::JSON($savedFiles, 202);
         break;
 
         case "DELETE":

@@ -257,6 +257,26 @@
 
 
     /**
+     * given temp file, it'll check if the it's within configuration
+     *
+     * @param String $tempPath
+     * @return Boolean | String
+     */
+    public static function MIMEIsAllowed($tempPath) {
+      $finfo = finfo_open(FILEINFO_MIME_TYPE);
+      $mime = finfo_file($finfo, $tempPath);
+      finfo_close($finfo);
+
+      if(in_array($mime, Config::get('ALLOWED_MIME')) === true) {
+        return $mime;
+      } else {
+        return false;
+      }
+    }
+
+
+
+    /**
      * returns URL
      *
      * @return string
