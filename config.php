@@ -33,9 +33,10 @@
       "JWT_IAT" => "now",
 
       // S3
-      "S3_UPLOAD_DIR" => "__S3__",
-      "S3_UPLOAD_URL" => "@S3",
+      "S3_UPLOAD_DIR" => "__S3__", // relative to the root directory
+      "S3_UPLOAD_URL" => "@S3", // appended to the host, http://rock.io/@S3
       "S3_BASE64" => 0,
+      "ALLOWED_MIME" => ["image/jpeg", "image/png", "image/gif", "application/pdf", "text/rtf", "application/epub+zip", "text/plain", "application/octet-stream", "application/zip"],
 
       // database
       "DB_HOST" => "localhost",
@@ -84,8 +85,8 @@
         ],
         "s3"          => [
           "pk"        => "id",
-          "columns"   => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\"", "base64"],
-          "returning" => ["id", "name", "size", "type", "url", "\"thumbnailUrl\"", "\"deleteUrl\"", "\"deleteType\"", "base64"],
+          "columns"   => ["id", "name", "size", "type", "url"],
+          "returning" => ["id", "name", "size", "type", "url"],
           "int"       => ["id", "size"],
         ],
         "social"      => [
