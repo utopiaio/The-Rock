@@ -267,7 +267,7 @@
       $mime = finfo_file($finfo, $tempPath);
       finfo_close($finfo);
 
-      if(in_array($mime, Config::get('ALLOWED_MIME')) === true) {
+      if(in_array($mime, Config::get('S3_ALLOWED_MIME')) === true) {
         return $mime;
       } else {
         return false;
