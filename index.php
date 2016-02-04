@@ -1,32 +1,38 @@
 <?php
-  require __DIR__ ."/vendor/autoload.php";
-  require __DIR__ ."/config.php";
-  require __DIR__ ."/Moedoo.php";
-  require __DIR__ ."/Rock.php";
-  require __DIR__ ."/Util.php";
-  require __DIR__ ."/services/REST.php";
-  require __DIR__ ."/services/OPTIONS.php";
-  require __DIR__ ."/services/all.php";
-  require __DIR__ ."/services/auth.php";
-  require __DIR__ ."/services/S3.php";
+  // this is a global container for REST mapping
+  //
+  // structure:
+  // $__REST__[$routeInfo[1]] = function($routeInfo) {...};
+  $__REST__ = [];
+
+  require __DIR__ .'/vendor/autoload.php';
+  require __DIR__ .'/config.php';
+  require __DIR__ .'/Moedoo.php';
+  require __DIR__ .'/Rock.php';
+  require __DIR__ .'/Util.php';
+  require __DIR__ .'/services/REST.php';
+  require __DIR__ .'/services/OPTIONS.php';
+  require __DIR__ .'/services/all.php';
+  require __DIR__ .'/services/auth.php';
+  require __DIR__ .'/services/S3.php';
 
   $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
-    $r->addRoute("GET", Config::get("ROOT_URL")."/auth", "auth");
-    $r->addRoute("POST", Config::get("ROOT_URL")."/auth", "auth");
+    $r->addRoute('GET', Config::get('ROOT_URL').'/auth', 'auth');
+    $r->addRoute('POST', Config::get('ROOT_URL').'/auth', 'auth');
 
-    $r->addRoute("GET", Config::get("ROOT_URL")."/all", "all");
+    $r->addRoute('GET', Config::get('ROOT_URL').'/all', 'all');
 
-    $r->addRoute("GET", Config::get("ROOT_URL")."/@S3/{filePath:.+}", "S3");
-    $r->addRoute("DELETE", Config::get("ROOT_URL")."/@S3/{filePath:.+}", "S3");
-    $r->addRoute("POST", Config::get("ROOT_URL")."/S3", "S3");
+    $r->addRoute('GET', Config::get('ROOT_URL').'/@S3/{filePath:.+}', 'S3');
+    $r->addRoute('DELETE', Config::get('ROOT_URL').'/@S3/{filePath:.+}', 'S3');
+    $r->addRoute('POST', Config::get('ROOT_URL').'/S3', 'S3');
 
-    $r->addRoute("OPTIONS", Config::get("ROOT_URL")."/[{path:.+}]", "OPTIONS");
+    $r->addRoute('OPTIONS', Config::get('ROOT_URL').'/[{path:.+}]', 'OPTIONS');
 
-    $r->addRoute("GET", Config::get("ROOT_URL")."/{table}[/{id:\d+}]", "REST");
-    $r->addRoute("GET", Config::get("ROOT_URL")."/{table}/{count:count}", "REST");
-    $r->addRoute("POST", Config::get("ROOT_URL")."/{table}", "REST");
-    $r->addRoute("PUT", Config::get("ROOT_URL")."/{table}/{id:\d+}", "REST");
-    $r->addRoute("DELETE", Config::get("ROOT_URL")."/{table}/{id:\d+}", "REST");
+    $r->addRoute('GET', Config::get('ROOT_URL').'/{table}[/{id:\d+}]', 'REST');
+    $r->addRoute('GET', Config::get('ROOT_URL').'/{table}/{count:count}', 'REST');
+    $r->addRoute('POST', Config::get('ROOT_URL').'/{table}', 'REST');
+    $r->addRoute('PUT', Config::get('ROOT_URL').'/{table}/{id:\d+}', 'REST');
+    $r->addRoute('DELETE', Config::get('ROOT_URL').'/{table}/{id:\d+}', 'REST');
   });
 
   $routeInfo = $dispatcher->dispatch($_SERVER["REQUEST_METHOD"], array_key_exists("REDIRECT_URL", $_SERVER) === true ? $_SERVER["REDIRECT_URL"] : "/");
@@ -54,7 +60,7 @@
       }
 
       try {
-        $RestContainer[$routeInfo[1]]($routeInfo);
+        $__REST__[$routeInfo[1]]($routeInfo);
         pg_close($db);
       } catch(Exception $e) {
         Rock::halt(400, $e->getMessage());
