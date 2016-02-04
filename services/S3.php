@@ -70,10 +70,6 @@
               if(is_file(Config::get("S3_UPLOAD_DIR") ."/". $fileInfo["name"])) {
                 unlink(Config::get("S3_UPLOAD_DIR") ."/". $fileInfo["name"]);
               }
-
-              if(is_file(Config::get("S3_UPLOAD_DIR") ."/thumbnail/". $fileInfo["name"])) {
-                unlink(Config::get("S3_UPLOAD_DIR") ."/thumbnail/". $fileInfo["name"]);
-              }
             } catch(Exception $e) {
               Rock::halt($e->getCode() === 1 ? 404 : 400, $e->getMessage());
             }
@@ -94,10 +90,6 @@
 
                 if(is_file(Config::get("S3_UPLOAD_DIR") ."/". $fileInfo["name"])) {
                   unlink(Config::get("S3_UPLOAD_DIR") ."/". $fileInfo["name"]);
-                }
-
-                if(is_file(Config::get("S3_UPLOAD_DIR") ."/thumbnail/". $fileInfo["name"])) {
-                  unlink(Config::get("S3_UPLOAD_DIR") ."/thumbnail/". $fileInfo["name"]);
                 }
               } catch(Exception $e) {
                 Rock::halt(400, $e->getMessage());
