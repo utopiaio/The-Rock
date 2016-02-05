@@ -339,16 +339,20 @@
 
         $order_by = substr($order_by, 0, -2);
         $limit = "LIMIT {$limit}";
-        $rows = Moedoo::executeQuery($table, "{$query} {$where} {$order_by} {$limit};", $params);
+        try {
+          $rows = Moedoo::executeQuery($table, "{$query} {$where} {$order_by} {$limit};", $params);
 
-        if(count($rows) === 0) {
-          return [];
-        }
+          if(count($rows) === 0) {
+            return [];
+          }
 
-        else {
-          $rows = Moedoo::cast($table, $rows);
-          $rows = Moedoo::referenceFk($table, $rows, $depth);
-          return $rows;
+          else {
+            $rows = Moedoo::cast($table, $rows);
+            $rows = Moedoo::referenceFk($table, $rows, $depth);
+            return $rows;
+          }
+        } catch(Exception $e) {
+          throw new Exception($e->getMessage(), 1);
         }
       }
     }
@@ -364,15 +368,21 @@
     public static function count($table) {
       $query = "SELECT count(". Config::get("TABLES")[$table]["pk"] .") as count FROM ". Config::get("TABLE_PREFIX") ."{$table};";
       $params = [];
-      $rows = Moedoo::executeQuery($table, $query, $params);
+      try {
+        $rows = Moedoo::executeQuery($table, $query, $params);
 
-      if(count($rows) === 0) {
-        $count = 0;
-      } else {
-        $count = (int)$rows[0]["count"];
+        if(count($rows) === 0) {
+          $count = 0;
+        }
+
+        else {
+          $count = (int)$rows[0]["count"];
+        }
+
+        return $count;
+      } catch(Exception $e) {
+        throw new Exception($e->getMessage(), 1);
       }
-
-      return $count;
     }
 
 
@@ -432,16 +442,20 @@
       }
 
       $query .= "LIMIT {$limit} OFFSET {$offset};";
-      $rows = Moedoo::executeQuery($table, $query, $params);
+      try {
+        $rows = Moedoo::executeQuery($table, $query, $params);
 
-      if(count($rows) === 0) {
-        return [];
-      }
+        if(count($rows) === 0) {
+          return [];
+        }
 
-      else {
-        $rows = Moedoo::cast($table, $rows);
-        $rows = Moedoo::referenceFk($table, $rows, $depth);
-        return $rows;
+        else {
+          $rows = Moedoo::cast($table, $rows);
+          $rows = Moedoo::referenceFk($table, $rows, $depth);
+          return $rows;
+        }
+      } catch (Exception $e) {
+        throw new Exception($e->getMessage(), 1);
       }
     }
 
@@ -481,17 +495,19 @@
       $returning = Moedoo::buildReturn($table);
 
       $query = "INSERT INTO ". Config::get("TABLE_PREFIX") ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
-      $rows = Moedoo::executeQuery($table, $query, $params);
+      try {
+        $rows = Moedoo::executeQuery($table, $query, $params);
 
-      // currently we're only supporting single row insert
-      if(count($rows) === 1) {
-        $rows = Moedoo::cast($table, $rows);
-        $rows = Moedoo::referenceFk($table, $rows, $depth);
-        return $rows[0];
-      }
-
-      else {
-        throw new Exception("error processing query", 1);
+        // currently we're only supporting single row insert
+        if(count($rows) === 1) {
+          $rows = Moedoo::cast($table, $rows);
+          $rows = Moedoo::referenceFk($table, $rows, $depth);
+          return $rows[0];
+        } else {
+          throw new Exception("error processing query", 1);
+        }
+      } catch (Exception $e) {
+        throw new Exception($e->getMessage(), 1);
       }
     }
 
@@ -528,17 +544,24 @@
       array_push($params, $id);
 
       $query = "UPDATE ". Config::get("TABLE_PREFIX") ."{$table} SET {$set} WHERE ". Config::get("TABLES")[$table]["pk"] ."=\${$count} RETURNING {$columns};";
-      $rows = Moedoo::executeQuery($table, $query, $params);
+      try {
+        $rows = Moedoo::executeQuery($table, $query, $params);
 
-      // currently we're only supporting single row update
-      if(count($rows) === 1) {
-        $rows = Moedoo::cast($table, $rows);
-        $rows = Moedoo::referenceFk($table, $rows, $depth);
-        return $rows[0];
-      }
+        // currently we're only supporting single row update
+        if(count($rows) === 1) {
+          $rows = Moedoo::cast($table, $rows);
+          $rows = Moedoo::referenceFk($table, $rows, $depth);
+          return $rows[0];
+        }
 
-      else {
-        throw new Exception("error processing query", 1);
+        // no row was affected, returns the data back...
+        else {
+          $rows = Moedoo::cast($table, [$data]);
+          $rows = Moedoo::referenceFk($table, $rows, $depth);
+          return $data;
+        }
+      } catch(Exception $e) {
+        throw new Exception($e->getMessage(), 1);
       }
     }
 
@@ -561,15 +584,17 @@
       $columns = Moedoo::buildReturn($table);
 
       $query = "DELETE FROM ". Config::get("TABLE_PREFIX") ."{$table} WHERE ". Config::get("TABLES")[$table]["pk"] ."=$1 RETURNING {$columns};";
-      $rows = Moedoo::executeQuery($table, $query, $params);
+      try {
+        $rows = Moedoo::executeQuery($table, $query, $params);
 
-      // currently we're only supporting single row deletion
-      if(count($rows) === 1) {
-        return $rows[0];
-      } else if(count($rows) === 0) {
-        throw new Exception("`". $table ."` with resource id `". $id ."` does not exist", 1);
-      } else {
-        throw new Exception("error processing query", 1);
+        // currently we're only supporting single row deletion
+        if(count($rows) === 1) {
+          return $rows[0];
+        } elseif(count($rows) === 0) {
+          throw new Exception("`{$table}` with resource id `{$id}` does not exist", 1);
+        }
+      } catch(Exception $e) {
+        throw new Exception($e->getMessage(), 1);
       }
     }
   }
