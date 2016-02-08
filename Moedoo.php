@@ -516,6 +516,8 @@
     /**
      * executes UPDATE on a given tale entry
      *
+     * 1 - patch request on non-existent data
+     *
      * @param string $table
      * @param array $data - data which to replace on
      * @return array | null
@@ -556,9 +558,7 @@
 
         // no row was affected, returns the data back...
         else {
-          $rows = Moedoo::cast($table, [$data]);
-          $rows = Moedoo::referenceFk($table, $rows, $depth);
-          return $data;
+          throw new Exception("`{$table}` entry with id `{$id}` does not exist", 1);
         }
       } catch(Exception $e) {
         throw new Exception($e->getMessage(), 1);

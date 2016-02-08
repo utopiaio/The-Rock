@@ -20,7 +20,7 @@
 
         if(count($result) === 1) {
           $user = $result[0];
-          $permissionMap = ["GET" => "read", "POST" => "create", "PUT" => "update", "DELETE" => "delete"];
+          $permissionMap = ["GET" => "read", "POST" => "create", "PATCH" => "update", "DELETE" => "delete"];
 
           /**
            * authentication pseudo logic steps

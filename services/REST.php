@@ -76,7 +76,7 @@
         Rock::JSON($result, 201);
       break;
 
-      case "PUT":
+      case "PATCH":
         $body = Rock::getBody($table);
 
         switch($table) {
