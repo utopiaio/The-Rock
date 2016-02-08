@@ -48,7 +48,7 @@
 
       // CORS
       "CORS_WHITE_LIST" => ["*", "rock.io", "foo.com"],
-      "CORS_METHODS" => ["GET", "POST", "PUT", "DELETE"],
+      "CORS_METHODS" => ["GET", "POST", "PATCH", "DELETE"],
       "CORS_HEADERS" => ["Accept", "Content-Type", "Content-Range", "Content-Disposition", "X-Access-Token"],
       "CORS_MAX_AGE" => "86400",
 
@@ -56,7 +56,7 @@
       "AUTH_REQUESTS" => [
         "GET"     => ["story"],
         "POST"    => ["story"],
-        "PUT"     => ["about", "social", "story"],
+        "PATCH"   => ["about", "social", "story"],
         "DELETE"  => ["story"]
       ],
 
@@ -64,7 +64,7 @@
       "FORBIDDEN_REQUESTS" => [
         "GET"     => [],
         "POST"    => ["about"],
-        "PUT"     => [],
+        "PATCH"   => [],
         "DELETE"  => ["about"]
       ],
 

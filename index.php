@@ -31,7 +31,7 @@
     $r->addRoute('GET', Config::get('ROOT_URL').'/{table}[/{id:\d+}]', 'REST');
     $r->addRoute('GET', Config::get('ROOT_URL').'/{table}/{count:count}', 'REST');
     $r->addRoute('POST', Config::get('ROOT_URL').'/{table}', 'REST');
-    $r->addRoute('PUT', Config::get('ROOT_URL').'/{table}/{id:\d+}', 'REST');
+    $r->addRoute('PATCH', Config::get('ROOT_URL').'/{table}/{id:\d+}', 'REST');
     $r->addRoute('DELETE', Config::get('ROOT_URL').'/{table}/{id:\d+}', 'REST');
   });
 
