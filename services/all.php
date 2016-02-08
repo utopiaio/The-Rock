@@ -5,8 +5,8 @@
    */
   $__REST__["all"] = function($routeInfo) {
     $tables = Config::get("TABLES");
-    unset($tables["users"]);
-    unset($tables["user_groups"]);
+    unset($tables["user"]);
+    unset($tables["user_group"]);
     unset($tables["s3"]);
     $authGETRequests = Config::get("AUTH_REQUESTS")["GET"];
     $authGETForbiddenRequests = Config::get("FORBIDDEN_REQUESTS")["GET"];

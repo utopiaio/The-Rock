@@ -53,7 +53,7 @@
         $body = Rock::getBody($table);
 
         switch($table) {
-          case "users":
+          case "user":
             if(array_key_exists("user_username", $body) === true) {
               $body["user_username"] = strtolower($body["user_username"]);
               $body["user_username"] = preg_replace("/ /", "_", $body["user_username"]);
@@ -80,7 +80,7 @@
         $body = Rock::getBody($table);
 
         switch($table) {
-          case "users":
+          case "user":
             if(array_key_exists("user_username", $body) === true) {
               $body["user_username"] = strtolower($body["user_username"]);
               $body["user_username"] = preg_replace("/ /", "_", $body["user_username"]);
