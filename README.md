@@ -1,7 +1,7 @@
 ![The Rock](https://raw.githubusercontent.com/moe-szyslak/The-Rock/master/__S3__/TheRock.png "The Rock")
 
 #The Rock
-a set of static helper functions added on top of [FastRoute](https://github.com/nikic/FastRoute) and [Pimple](https://github.com/silexphp/Pimple) that make my 9-5 life easy.
+a set of static helper functions added on top of [FastRoute](https://github.com/nikic/FastRoute) that make my 9-5 life easy.
 
 Most of the REST API is controlled via `config.php` --- I'll try to make a wiki page.
 
