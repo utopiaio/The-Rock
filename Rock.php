@@ -67,7 +67,7 @@
         }
       }
 
-      else {
+      else if (in_array($table, Config::get("AUTH_REQUESTS")[$method]) === true) {
         Rock::halt(401, "missing authentication header `". Config::get("JWT_HEADER") ."`");
       }
     }
