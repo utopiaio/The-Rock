@@ -42,11 +42,11 @@
           foreach ($files['name'] as $index => $file) {
             $mime = Rock::MIMEIsAllowed($files['tmp_name'][$index]);
 
-            if ($mime === false || $files['error'][$index] > 0) {
+            if ($mime === false || $files['error'][$index] > 0 || (int)$files['size'][$index] > Config::get('S3_MAX_UPLOAD_SIZE')) {
               unlink($files['tmp_name'][$index]);
             } else {
               $name = Util::randomString(Config::get('S3_FILE_NAME_SIZE')) .'.'. substr($files['name'][$index], strrpos($files['name'][$index], '.') + 1);
-              $size = $files['size'][$index];
+              $size = (int)$files['size'][$index];
               $url = Rock::getUrl() .'/'. Config::get('S3_UPLOAD_URL') .'/'. $name;
               move_uploaded_file($files['tmp_name'][$index], Config::get('S3_UPLOAD_DIR') .'/'. $name);
               array_push($savedFiles, Moedoo::insert('s3', ['name' => $name, 'size' => $size, 'url' => $url, 'type' => $mime]));
