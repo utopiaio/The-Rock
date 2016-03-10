@@ -1,9 +1,9 @@
 <?php
   /**
-   * The Rock - a micro "framework" built on top of FastRoute and Pimple
+   * The Rock - a micro "framework" built on top of FastRoute (more like with)
    *
    * @author    Moe Szyslak <moe.duffdude@gmail.com>
-   * @version   0.1.3
+   * @version   0.4.0
    * @package   Deez Nuts
    */
 
@@ -107,15 +107,15 @@
             "{rock}"  => ["table" => "rock", "referenced_by" => "id", "referencing_column" => "col_fk_m"]
           ]
         ],
-        "user"       => [
+        "user"        => [
           "pk"        => "user_id",
-          "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_status", "user_group", "user_friend"],
-          "returning" => ["user_id", "user_full_name", "user_username", "user_status", "user_friend", "user_group"],
+          "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_status", "user_group"],
+          "returning" => ["user_id", "user_full_name", "user_username", "user_status", "user_group"],
           "int"       => ["user_id", "user_group"],
           "[int]"     => ["user_friend"],
           "bool"      => ["user_status"],
           "search"    => ["user_full_name", "user_username"],
-          "fk"       => [
+          "fk"        => [
             "user_group" => ["table" => "user_group", "references" => "user_group_id"],
             "[user_friend]" => ["table" => "user", "references" => "user_id"]
           ]
@@ -144,7 +144,10 @@
           ],
           "int"       => ["user_group_id"],
           "bool"      => ["user_group_has_permission_create_rock", "user_group_has_permission_read_rock", "user_group_has_permission_update_rock", "user_group_has_permission_delete_rock", "user_group_has_permission_create_tag", "user_group_has_permission_read_tag", "user_group_has_permission_update_tag", "user_group_has_permission_delete_tag", "user_group_has_permission_create_s3", "user_group_has_permission_read_s3", "user_group_has_permission_update_s3", "user_group_has_permission_delete_s3", "user_group_has_permission_create_user", "user_group_has_permission_read_user", "user_group_has_permission_update_user", "user_group_has_permission_delete_user", "user_group_has_permission_create_user_group", "user_group_has_permission_read_user_group", "user_group_has_permission_update_user_group", "user_group_has_permission_delete_user_group", "user_group_status"],
-          "search"    => ["user_group_name"]
+          "search"    => ["user_group_name"],
+          "fk"        => [
+            "{user}"  => ["table" => "user", "referenced_by" => "user_group_id", "referencing_column" => "user_group"]
+          ]
         ]
       ]
     ];
