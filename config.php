@@ -93,13 +93,19 @@
           "columns"   => ["id", "name", "size", "type", "url"],
           "returning" => ["id", "name", "size", "type", "url"],
           "int"       => ["id", "size"],
+          "fk"        => [
+            "{rock}"  => ["table" => "rock", "referenced_by" => "id", "referencing_column" => "col_fk"]
+          ]
         ],
         "tag"         => [
           "pk"        => "id",
           "columns"   => ["id", "tag"],
           "returning" => ["id", "tag"],
           "int"       => ["id"],
-          "search"    => ["tag"]
+          "search"    => ["tag"],
+          "fk"        => [
+            "{rock}"  => ["table" => "rock", "referenced_by" => "id", "referencing_column" => "col_fk_m"]
+          ]
         ],
         "user"       => [
           "pk"        => "user_id",
