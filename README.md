@@ -1,12 +1,12 @@
 ![The Rock](https://raw.githubusercontent.com/moe-szyslak/The-Rock/master/__S3__/TheRock.png "The Rock")
 
 #The Rock
-a set of static helper functions added on top of [FastRoute](https://github.com/nikic/FastRoute) that make my 9-5 life easy.
+A set of static helper functions added on top of [FastRoute](https://github.com/nikic/FastRoute) that make my 9-5 life easy.
 
 Most of the REST API is controlled via `config.php` --- I'll try to make a wiki page.
 
 ###Requirements
-as it's SPECIFICALLY designed to work on shared hosting all you need is
+As it's *SPECIFICALLY* designed to work on shared hosting all you need is
 - PHP5.4+
 - PG database 8+
 
@@ -44,14 +44,15 @@ Rock::JSON($data, $status) // returns JSON
 Rock::halt($status, $message) // halts execution
 Rock::hash($string) // returns the hash (set via `config.php`) of the string
 Rock::getHeaders() // returns request headers
+Rock::MIMEIsAllowed() // MEME checking on S3
 Rock::getUrl() // returns URL
 ```
 
 ###Why PHP
-i don't have a choice, PHP is the only thing i can afford to host on a "production" scale
+I don't have a choice, PHP is the only thing I can afford to host on a "production" scale.
 
 ###License
 MIT
 
 ###Contribution
-any contribution is welcome!
+contributions are welcome!
