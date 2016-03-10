@@ -1,9 +1,9 @@
 <?php
   /**
-   * The Rock - a micro "framework" built on top of FastRoute and Pimple
+   * The Rock - a micro "framework" built on top of FastRoute (more like with)
    *
    * @author    Moe Szyslak <moe.duffdude@gmail.com>
-   * @version   0.1.3
+   * @version   0.4.0
    * @package   Deez Nuts
    */
 
