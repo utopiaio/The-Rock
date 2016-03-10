@@ -55,33 +55,35 @@
 
       // requests that require authentication + tailored permission
       "AUTH_REQUESTS" => [
-        "GET"     => ["story"],
-        "POST"    => ["story"],
-        "PATCH"   => ["about", "social", "story"],
-        "DELETE"  => ["story"]
+        "GET"     => [],
+        "POST"    => [],
+        "PATCH"   => [],
+        "DELETE"  => []
       ],
 
       // request that are NOT allowed
       "FORBIDDEN_REQUESTS" => [
         "GET"     => [],
-        "POST"    => ["about"],
+        "POST"    => [],
         "PATCH"   => [],
-        "DELETE"  => ["about"]
+        "DELETE"  => []
       ],
 
       // Moedoo will construct queries based on this configurations
       "TABLES" => [
-        "about"       => [
+        "rock"        => [
           "pk"        => "id",
-          "columns"   => ["id", "data", "creator", "geom", "social"],
-          "returning" => ["id", "data", "creator", "geom", "social"],
-          "geometry"  => ["geom"],
-          "JSON"      => ["data"],
-          "int"       => ["id", "creator", "social"],
-          "search"    => ["data"],
+          "columns"   => ["id", "col_integer", "col_float", "col_double", "col_json", "col_bool", "col_geometry", "col_string", "col_fk", "col_fk_m"],
+          "returning" => ["id", "col_integer", "col_float", "col_double", "col_json", "col_bool", "col_geometry", "col_string", "col_fk", "col_fk_m"],
+          "bool"      => ["col_bool"],
+          "int"       => ["col_int"],
+          "float"     => ["col_float"],
+          "[double]"  => ["col_double"],
+          "JSON"      => ["col_json"],
+          "search"    => ["col_string"],
           "fk"        => [
-            "creator" => ["table" => "user", "references" => "user_id"],
-            "social"  => ["table" => "social", "references" => "id"]
+            "col_fk"      => ["table" => "s3", "references" => "id"],
+            "[col_fk_m]"  => ["table" => "tag", "references" => "id"]
           ]
         ],
         "s3"          => [
@@ -89,29 +91,6 @@
           "columns"   => ["id", "name", "size", "type", "url"],
           "returning" => ["id", "name", "size", "type", "url"],
           "int"       => ["id", "size"],
-        ],
-        "social"      => [
-          "pk"        => "id",
-          "columns"   => ["id", "data", "\"user\""],
-          "returning" => ["id", "data", "\"user\""],
-          "JSON"      => ["data"],
-          "int"       => ["id", "\"user\""],
-          "search"    => ["data"],
-          "fk"        => [
-            "user" => ["table" => "user", "references" => "user_id"]
-          ]
-        ],
-        "story"       => [
-          "pk"        => "id",
-          "columns"   => ["id", "story", "by", "tag"],
-          "returning" => ["id", "story", "by", "tag"],
-          "int"       => ["id", "by"],
-          "[int]"     => ["tag"],
-          "search"    => ["story"],
-          "fk"        => [
-            "by" => ["table" => "user", "references" => "user_id"],
-            "[tag]" => ["table" => "tag", "references" => "id"]
-          ]
         ],
         "tag"        => [
           "pk"        => "id",
@@ -135,10 +114,28 @@
         ],
         "user_group" => [
           "pk"        => "user_group_id",
-          "columns"   => ["user_group_id", "user_group_name", "user_group_has_permission_create_story", "user_group_has_permission_read_story", "user_group_has_permission_update_story", "user_group_has_permission_delete_story", "user_group_status"],
-          "returning" => ["user_group_id", "user_group_name", "user_group_has_permission_create_story", "user_group_has_permission_read_story", "user_group_has_permission_update_story", "user_group_has_permission_delete_story", "user_group_status"],
+          "columns"   => [
+            "user_group_id",
+            "user_group_name",
+            "user_group_has_permission_create_rock", "user_group_has_permission_read_rock", "user_group_has_permission_update_rock", "user_group_has_permission_delete_rock",
+            "user_group_has_permission_create_tag", "user_group_has_permission_read_tag", "user_group_has_permission_update_tag", "user_group_has_permission_delete_tag",
+            "user_group_has_permission_create_s3", "user_group_has_permission_read_s3", "user_group_has_permission_update_s3", "user_group_has_permission_delete_s3",
+            "user_group_has_permission_create_user", "user_group_has_permission_read_user", "user_group_has_permission_update_user", "user_group_has_permission_delete_user",
+            "user_group_has_permission_create_user_group", "user_group_has_permission_read_user_group", "user_group_has_permission_update_user_group", "user_group_has_permission_delete_user_group",
+            "user_group_status"
+          ],
+          "returning" => [
+            "user_group_id",
+            "user_group_name",
+            "user_group_has_permission_create_rock", "user_group_has_permission_read_rock", "user_group_has_permission_update_rock", "user_group_has_permission_delete_rock",
+            "user_group_has_permission_create_tag", "user_group_has_permission_read_tag", "user_group_has_permission_update_tag", "user_group_has_permission_delete_tag",
+            "user_group_has_permission_create_s3", "user_group_has_permission_read_s3", "user_group_has_permission_update_s3", "user_group_has_permission_delete_s3",
+            "user_group_has_permission_create_user", "user_group_has_permission_read_user", "user_group_has_permission_update_user", "user_group_has_permission_delete_user",
+            "user_group_has_permission_create_user_group", "user_group_has_permission_read_user_group", "user_group_has_permission_update_user_group", "user_group_has_permission_delete_user_group",
+            "user_group_status"
+          ],
           "int"       => ["user_group_id"],
-          "bool"      => ["user_group_has_permission_create_story", "user_group_has_permission_read_story", "user_group_has_permission_update_story", "user_group_has_permission_delete_story", "user_group_status"],
+          "bool"      => ["user_group_has_permission_create_rock", "user_group_has_permission_read_rock", "user_group_has_permission_update_rock", "user_group_has_permission_delete_rock", "user_group_has_permission_create_tag", "user_group_has_permission_read_tag", "user_group_has_permission_update_tag", "user_group_has_permission_delete_tag", "user_group_has_permission_create_s3", "user_group_has_permission_read_s3", "user_group_has_permission_update_s3", "user_group_has_permission_delete_s3", "user_group_has_permission_create_user", "user_group_has_permission_read_user", "user_group_has_permission_update_user", "user_group_has_permission_delete_user", "user_group_has_permission_create_user_group", "user_group_has_permission_read_user_group", "user_group_has_permission_update_user_group", "user_group_has_permission_delete_user_group", "user_group_status"],
           "search"    => ["user_group_name"]
         ]
       ]
