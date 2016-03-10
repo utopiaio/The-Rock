@@ -94,7 +94,7 @@
           "returning" => ["id", "name", "size", "type", "url"],
           "int"       => ["id", "size"],
         ],
-        "tag"        => [
+        "tag"         => [
           "pk"        => "id",
           "columns"   => ["id", "tag"],
           "returning" => ["id", "tag"],
