@@ -61,7 +61,6 @@
 
       try {
         $__REST__[$routeInfo[1]]($routeInfo);
-        pg_close($db);
       } catch(Exception $e) {
         Rock::halt(400, $e->getMessage());
       }
