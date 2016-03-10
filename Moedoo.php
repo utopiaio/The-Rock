@@ -19,12 +19,17 @@
           $tempDepth = $depth;
 
           foreach(Config::get("TABLES")[$table]["fk"] as $column => $referenceRule) {
+            // [col_name] --- multiple columns reference
             if(preg_match("/^\[.+\]$/", $column) === 1) {
-              $column = trim($column, "[]");
+              $column = trim($column, "[]"); // stripping the flags
 
               foreach($rows as $index => &$row) {
                 $map = [];
 
+                /**
+                 * going through the columns and referencing
+                 * key for "hash-map" is `tableName_referencedColumn_value`
+                 */
                 if(array_key_exists($column, $row) === true) {
                   foreach($row[$column] as $index => $value) {
                     if(array_key_exists("{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}", $cache) === true) {
@@ -50,6 +55,31 @@
                   }
 
                   $row[$column] = $map;
+                }
+              }
+            }
+
+            /**
+             * {col_name} --- reverse reference™️
+             * `Moedoo::select` will handle the appropriate casting for selection
+             */
+            else if(preg_match("/^\{.+\}$/", $column) === 1) {
+              $column = trim($column, "{}");
+
+              foreach($rows as $index => &$row) {
+                // we won't be short-circuiting the if logic for performance reasons
+                if(array_key_exists("{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}", $cache) === true) {
+                  if(is_null($cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"]) === false) {
+                    $row["_references"][$column] = $cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"];
+                  }
+                }
+
+                else {
+                  $illBeBack = $depth;
+                  $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["referencing_column"] => $row[$referenceRule["referenced_by"]]], null, $depth);
+                  $depth = $illBeBack;
+                  $row["_references"][$column] = $referencedRow;
+                  $cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"] = $referencedRow;
                 }
               }
             }
@@ -415,7 +445,17 @@
 
           foreach($and as $column => $value) {
             array_push($params, $value);
-            $query .= "{$column}=$".count($params)." AND ";
+
+            if((array_key_exists("[bool]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[bool]"]) === true) ||
+               (array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) ||
+               (array_key_exists("[float]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[float]"]) === true) ||
+               (array_key_exists("[double]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[double]"]) === true) ||
+               (array_key_exists("[JSON]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[JSON]"]) === true) ||
+               (array_key_exists("[geometry]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[geometry]"]) === true)) {
+              $query .= "$". count($params) ."=ANY({$column}) AND ";
+            } else {
+              $query .= "{$column}=$". count($params) ." AND ";
+            }
           }
 
           $query = substr($query, 0, -5);
@@ -431,7 +471,17 @@
 
           foreach($or as $column => $value) {
             array_push($params, $value);
-            $query .= "{$column}=$".count($params)." OR ";
+
+            if((array_key_exists("[bool]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[bool]"]) === true) ||
+               (array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) ||
+               (array_key_exists("[float]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[float]"]) === true) ||
+               (array_key_exists("[double]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[double]"]) === true) ||
+               (array_key_exists("[JSON]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[JSON]"]) === true) ||
+               (array_key_exists("[geometry]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[geometry]"]) === true)) {
+              $query .= "$". count($params) ."=ANY({$column}) OR ";
+            } else {
+              $query .= "{$column}=$".count($params)." OR ";
+            }
           }
 
           $query = substr($query, 0, -4);
