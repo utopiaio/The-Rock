@@ -112,12 +112,10 @@
           "columns"   => ["user_id", "user_full_name", "user_username", "user_password", "user_status", "user_group"],
           "returning" => ["user_id", "user_full_name", "user_username", "user_status", "user_group"],
           "int"       => ["user_id", "user_group"],
-          "[int]"     => ["user_friend"],
           "bool"      => ["user_status"],
           "search"    => ["user_full_name", "user_username"],
           "fk"        => [
-            "user_group" => ["table" => "user_group", "references" => "user_group_id"],
-            "[user_friend]" => ["table" => "user", "references" => "user_id"]
+            "user_group" => ["table" => "user_group", "references" => "user_group_id"]
           ]
         ],
         "user_group" => [
