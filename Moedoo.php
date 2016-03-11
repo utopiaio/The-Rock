@@ -70,7 +70,7 @@
                 // we won't be short-circuiting the if logic for performance reasons
                 if(array_key_exists("{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}", $cache) === true) {
                   if(is_null($cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"]) === false) {
-                    $row["_references"][$column] = $cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"];
+                    $row[Config::get("REFERENCE_KEY")][$column] = $cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"];
                   }
                 }
 
@@ -78,7 +78,7 @@
                   $illBeBack = $depth;
                   $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["referencing_column"] => $row[$referenceRule["referenced_by"]]], null, $depth);
                   $depth = $illBeBack;
-                  $row["_references"][$column] = $referencedRow;
+                  $row[Config::get("REFERENCE_KEY")][$column] = $referencedRow;
                   $cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"] = $referencedRow;
                 }
               }

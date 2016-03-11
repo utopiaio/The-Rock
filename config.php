@@ -47,6 +47,9 @@
       "DB_NAME" => "rock",
       "DEFAULT_DEPTH" => 1,
 
+      // reference key (to be used for reverse referencing)
+      "REFERENCE_KEY" => "reference",
+
       // CORS
       "CORS_WHITE_LIST" => ["*", "rock.io", "foo.com"],
       "CORS_METHODS" => ["GET", "POST", "PATCH", "DELETE"],
