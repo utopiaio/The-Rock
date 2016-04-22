@@ -1,5 +1,6 @@
 <?php
   $__REST__['graph'] = function($routeInfo) {
+    $defaultDepth = Config::get("DEFAULT_DEPTH");
     $authRequests = Config::get('AUTH_REQUESTS')['GET'];
     $authForbiddenRequests = Config::get('FORBIDDEN_REQUESTS')['GET'];
     $user = Rock::hasValidToken();
@@ -8,6 +9,8 @@
     $return = [];
 
     foreach ($ql as $key => $table) {
+      $depth = $defaultDepth;
+
       // checking table exits...
       if (array_key_exists($table, Config::get('TABLES')) === false) {
         $return[$table] = null;
@@ -31,7 +34,7 @@
 
           // user has valid permission
           elseif(Rock::hasPermission($user, "user_group_has_permission_read_{$table}") === true) {
-            $return[$table] = Moedoo::select($table);
+            $return[$table] = Moedoo::select($table, null, null, $depth);
           }
 
           // user does not have a permission mapping
@@ -42,7 +45,7 @@
 
         // resource is public
         else {
-          $return[$table] = Moedoo::select($table);
+          $return[$table] = Moedoo::select($table, null, null, $depth);
         }
       }
     }
