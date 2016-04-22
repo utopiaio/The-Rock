@@ -76,7 +76,7 @@
       $size = strlen($seed) - 1;
       $str = "";
 
-      for($i = 0; $i < $length; $i++) {
+      for ($i = 0; $i < $length; $i++) {
         $str .= $seed[rand(0, $size)];
       }
 
@@ -95,14 +95,14 @@
     public static function toArray($body) {
       $body = json_decode($body);
 
-      if($body === null) {
+      if ($body === null) {
         Rock::halt(400, "unable to parse body");
       }
 
       else {
         $array = [];
 
-        foreach($body as $key => $value) {
+        foreach ($body as $key => $value) {
           $array[$key] = $value;
         }
 
