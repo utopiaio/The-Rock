@@ -77,9 +77,9 @@
     /**
      * checks the request has a valid token + user is active
      * used for non CURD table mapping
-     * else halts execution
+     * else returns false
      *
-     * @return A.Array
+     * @return A.Array | false
      */
     public static function hasValidToken() {
       $requestHeaders = Rock::getHeaders();
@@ -88,7 +88,7 @@
         try {
           $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get("JWT_HEADER")], Config::get("JWT_KEY"), ["HS256"]);
         } catch (Exception $e) {
-          Rock::halt(401, "invalid authorization token");
+          return false;
         }
 
         $depth = 1;
@@ -99,25 +99,25 @@
 
           // user suspended
           if ($user["user_status"] === false) {
-            Rock::halt(401, "account has been suspended");
+            return false;
           }
 
           // user doesn't belong to a user-group
-          else if (is_null($user["user_group"]) === true) {
-            Rock::halt(401, "account permission set can not be identified");
+          elseif (is_null($user["user_group"]) === true) {
+            return false;
           }
 
           // user-group has been suspended
-          else if ($user["user_group"]["user_group_status"] === false) {
-            Rock::halt(401, "user group `{$user["user_group"]["user_group_name"]}` has been suspended");
+          elseif ($user["user_group"]["user_group_status"] === false) {
+            return false;
           }
 
           return $user;
         } else {
-          Rock::halt(401, "token no longer valid");
+          return false;
         }
       } else {
-        Rock::halt(401, "missing authentication header `". Config::get("JWT_HEADER") ."`");
+        return false;
       }
     }
 
