@@ -75,6 +75,72 @@
 
 
     /**
+     * checks the request has a valid token + user is active
+     * used for non CURD table mapping
+     * else halts execution
+     *
+     * @return A.Array
+     */
+    public static function hasValidToken() {
+      $requestHeaders = Rock::getHeaders();
+
+      if (array_key_exists(Config::get("JWT_HEADER"), $requestHeaders) === true) {
+        try {
+          $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get("JWT_HEADER")], Config::get("JWT_KEY"), ["HS256"]);
+        } catch (Exception $e) {
+          Rock::halt(401, "invalid authorization token");
+        }
+
+        $depth = 1;
+        $result = Moedoo::select("user", [Config::get("TABLES")["user"]["pk"] => $decoded["id"]], null, $depth);
+
+        if (count($result) === 1) {
+          $user = $result[0];
+
+          // user suspended
+          if ($user["user_status"] === false) {
+            Rock::halt(401, "account has been suspended");
+          }
+
+          // user doesn't belong to a user-group
+          else if (is_null($user["user_group"]) === true) {
+            Rock::halt(401, "account permission set can not be identified");
+          }
+
+          // user-group has been suspended
+          else if ($user["user_group"]["user_group_status"] === false) {
+            Rock::halt(401, "user group `{$user["user_group"]["user_group_name"]}` has been suspended");
+          }
+
+          return $user;
+        } else {
+          Rock::halt(401, "token no longer valid");
+        }
+      } else {
+        Rock::halt(401, "missing authentication header `". Config::get("JWT_HEADER") ."`");
+      }
+    }
+
+
+
+    /**
+     * has permission
+     * @param $user A.Array
+     * @param $permission String
+     * @return Boolean
+     */
+    public static function hasPermission($user, $permission) {
+      if (array_key_exists($permission, $user["user_group"]) === true) {
+        if ($user["user_group"][$permission] === true) return true;
+        else return false;
+      }
+
+      else return false;
+    }
+
+
+
+    /**
      * given username and password info
      * it'll return authenticated user info along with the jwt
      *
