@@ -8,17 +8,17 @@
     public static function authenticated($method, $table) {
       $requestHeaders = Rock::getHeaders();
 
-      if(array_key_exists(Config::get("JWT_HEADER"), $requestHeaders) === true) {
+      if (array_key_exists(Config::get("JWT_HEADER"), $requestHeaders) === true) {
         try {
           $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get("JWT_HEADER")], Config::get("JWT_KEY"), ["HS256"]);
-        } catch(Exception $e) {
+        } catch (Exception $e) {
           Rock::halt(401, "invalid authorization token");
         }
 
         $depth = 1;
         $result = Moedoo::select("user", [Config::get("TABLES")["user"]["pk"] => $decoded["id"]], null, $depth);
 
-        if(count($result) === 1) {
+        if (count($result) === 1) {
           $user = $result[0];
           $permissionMap = ["GET" => "read", "POST" => "create", "PATCH" => "update", "DELETE" => "delete"];
 
@@ -31,23 +31,23 @@
            */
 
           // 1
-          if($user["user_status"] === false) {
+          if ($user["user_status"] === false) {
             Rock::halt(401, "account has been suspended");
           }
 
           // 2
-          else if(is_null($user["user_group"]) === true) {
+          elseif (is_null($user["user_group"]) === true) {
             Rock::halt(401, "account permission set can not be identified");
           }
 
           // 2
-          else if($user["user_group"]["user_group_status"] === false) {
+          elseif ($user["user_group"]["user_group_status"] === false) {
             Rock::halt(401, "user group `{$user["user_group"]["user_group_name"]}` has been suspended");
           }
 
           // 3
-          else if(array_key_exists("user_group_has_permission_{$permissionMap[$method]}_{$table}", $user["user_group"]) === true) {
-            if($user["user_group"]["user_group_has_permission_{$permissionMap[$method]}_{$table}"] === true) {
+          elseif (array_key_exists("user_group_has_permission_{$permissionMap[$method]}_{$table}", $user["user_group"]) === true) {
+            if ($user["user_group"]["user_group_has_permission_{$permissionMap[$method]}_{$table}"] === true) {
               // all permission checks are a go, proceed
               // any post-pre authentication logic go here
             }
@@ -67,7 +67,7 @@
         }
       }
 
-      else if (in_array($table, Config::get("AUTH_REQUESTS")[$method]) === true) {
+      elseif (in_array($table, Config::get("AUTH_REQUESTS")[$method]) === true) {
         Rock::halt(401, "missing authentication header `". Config::get("JWT_HEADER") ."`");
       }
     }
@@ -87,19 +87,19 @@
       $password = Rock::hash($password);
       $result = Moedoo::select("user", ["user_username" => $username, "user_password" => $password]);
 
-      if(count($result) === 1) {
+      if (count($result) === 1) {
         $user = $result[0];
 
         // user account has been suspended
-        if($user["user_status"] === false) {
+        if ($user["user_status"] === false) {
           Rock::halt(401, "account has been suspended");
         }
 
-        else if(is_null($user["user_group"]) === true) {
+        elseif (is_null($user["user_group"]) === true) {
           Rock::halt(401, "account permission set can not be identified");
         }
 
-        else if($user["user_group"]["user_group_status"] === false) {
+        elseif ($user["user_group"]["user_group_status"] === false) {
           Rock::halt(401, "user group `{$user["user_group"]["user_group_name"]}` has been suspended");
         }
 
@@ -137,15 +137,15 @@
      * @param string $role
      */
     public static function check($method, $table) {
-      if(array_key_exists($table, Config::get("TABLES")) === false) {
+      if (array_key_exists($table, Config::get("TABLES")) === false) {
         Rock::halt(404, "requested resource `". $table ."` does not exist");
       }
 
-      if(in_array($table, Config::get("FORBIDDEN_REQUESTS")[$method]) === true) {
+      if (in_array($table, Config::get("FORBIDDEN_REQUESTS")[$method]) === true) {
         Rock::halt(403, "`". $method ."` method on table `". $table ."` is forbidden");
       }
 
-      if(in_array($table, Config::get("AUTH_REQUESTS")[$method]) === true) {
+      if (in_array($table, Config::get("AUTH_REQUESTS")[$method]) === true) {
         // this is where the tailored permission check is applied...
         Rock::authenticated($method, $table);
       }
@@ -165,10 +165,10 @@
       fclose($streamHandle);
       $body = Util::toArray($body);
 
-      if($table !== null) {
+      if ($table !== null) {
         // validating payload...
-        foreach($body as $column => $value) {
-          if(in_array($column, Config::get("TABLES")[$table]["columns"]) === false) {
+        foreach ($body as $column => $value) {
+          if (in_array($column, Config::get("TABLES")[$table]["columns"]) === false) {
             Rock::halt(400, "unknown column `{$column}` for table `{$table}`");
           }
         }
@@ -208,7 +208,7 @@
      * @param string $message - message to be sent back with `error` property
      */
     public static function halt($status = 401, $message = null) {
-      if($message === null) {
+      if ($message === null) {
         header("HTTP/1.1 ". $status ." ". Util::$codes[$status]);
         header("Content-Type: application/json;charset=utf-8");
       }
@@ -247,7 +247,7 @@
     public static function getHeaders() {
       $headers = getallheaders();
 
-      if($headers === false) {
+      if ($headers === false) {
         throw new Exception("Error Processing Request", 4);
       }
 
@@ -267,7 +267,7 @@
       $mime = finfo_file($finfo, $tempPath);
       finfo_close($finfo);
 
-      if(in_array($mime, Config::get('S3_ALLOWED_MIME')) === true) {
+      if (in_array($mime, Config::get('S3_ALLOWED_MIME')) === true) {
         return $mime;
       } else {
         return false;

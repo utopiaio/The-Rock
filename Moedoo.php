@@ -9,31 +9,31 @@
      * @return array
      */
     public static function referenceFk($table, $rows, &$depth = 1) {
-      if($depth > 0 || $depth === -1) {
-        if($depth > 0) {
+      if ($depth > 0 || $depth === -1) {
+        if ($depth > 0) {
           $depth--;
         }
 
-        if(array_key_exists("fk", Config::get("TABLES")[$table]) === true) {
+        if (array_key_exists("fk", Config::get("TABLES")[$table]) === true) {
           $cache = [];
           $tempDepth = $depth;
 
-          foreach(Config::get("TABLES")[$table]["fk"] as $column => $referenceRule) {
+          foreach (Config::get("TABLES")[$table]["fk"] as $column => $referenceRule) {
             // [col_name] --- multiple columns reference
-            if(preg_match("/^\[.+\]$/", $column) === 1) {
+            if (preg_match("/^\[.+\]$/", $column) === 1) {
               $column = trim($column, "[]"); // stripping the flags
 
-              foreach($rows as $index => &$row) {
+              foreach ($rows as $index => &$row) {
                 $map = [];
 
                 /**
                  * going through the columns and referencing
                  * key for "hash-map" is `tableName_referencedColumn_value`
                  */
-                if(array_key_exists($column, $row) === true) {
-                  foreach($row[$column] as $index => $value) {
-                    if(array_key_exists("{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}", $cache) === true) {
-                      if(is_null($cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"]) === false) {
+                if (array_key_exists($column, $row) === true) {
+                  foreach ($row[$column] as $index => $value) {
+                    if (array_key_exists("{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}", $cache) === true) {
+                      if (is_null($cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"]) === false) {
                         array_push($map, $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"]);
                       }
                     }
@@ -43,7 +43,7 @@
                       $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $value], null, $depth);
                       $depth = $illBeBack;
 
-                      if(count($referencedRow) === 1) {
+                      if (count($referencedRow) === 1) {
                         $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"] = $referencedRow[0];
                         array_push($map, $referencedRow[0]);
                       }
@@ -63,13 +63,13 @@
              * {col_name} --- reverse reference™️
              * `Moedoo::select` will handle the appropriate casting for selection
              */
-            else if(preg_match("/^\{.+\}$/", $column) === 1) {
+            else if (preg_match("/^\{.+\}$/", $column) === 1) {
               $column = trim($column, "{}");
 
-              foreach($rows as $index => &$row) {
+              foreach ($rows as $index => &$row) {
                 // we won't be short-circuiting the if logic for performance reasons
-                if(array_key_exists("{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}", $cache) === true) {
-                  if(is_null($cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"]) === false) {
+                if (array_key_exists("{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}", $cache) === true) {
+                  if (is_null($cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"]) === false) {
                     $row[Config::get("REFERENCE_KEY")][$column] = $cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"];
                   }
                 }
@@ -85,10 +85,10 @@
             }
 
             else {
-              foreach($rows as $index => &$row) {
-                if(array_key_exists($column, $row) === true) {
-                  if(array_key_exists("{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}", $cache) === true) {
-                    if(is_null($cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"]) === false) {
+              foreach ($rows as $index => &$row) {
+                if (array_key_exists($column, $row) === true) {
+                  if (array_key_exists("{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}", $cache) === true) {
+                    if (is_null($cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"]) === false) {
                       $row[$column] = $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"];
                     }
                   }
@@ -98,7 +98,7 @@
                     $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $row[$column]], null, $depth);
                     $depth = $illBeBack;
 
-                    if(count($referencedRow) === 1) {
+                    if (count($referencedRow) === 1) {
                       $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"] = $referencedRow[0];
                       $row[$column] = $referencedRow[0];
                     }
@@ -130,8 +130,8 @@
     public static function buildReturn($table) {
       $build = "";
 
-      foreach(Config::get("TABLES")[$table]["returning"] as $index => $column) {
-        if(array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
+      foreach (Config::get("TABLES")[$table]["returning"] as $index => $column) {
+        if (array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
           $build .= "ST_AsGeoJSON({$column}) as {$column}, ";
         } else {
           $build .= "{$column}, ";
@@ -152,20 +152,20 @@
      * @return array - database operation ready data
      */
     public static function castForPg($table, $data) {
-      foreach($data as $column => &$value) {
-        if(array_key_exists("JSON", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["JSON"]) === true) {
+      foreach ($data as $column => &$value) {
+        if (array_key_exists("JSON", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["JSON"]) === true) {
           $value = json_encode($value);
         }
 
-        if(array_key_exists("bool", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["bool"]) === true) {
+        if (array_key_exists("bool", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["bool"]) === true) {
           $value = $value === true ? "TRUE" : "FALSE";
         }
 
-        if(array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
+        if (array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
           $value = json_encode($value);
         }
 
-        if( (array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) ||
+        if ( (array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) ||
             (array_key_exists("[float]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[float]"]) === true) ||
             (array_key_exists("[double]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[double]"]) === true) ) {
           $value = "{". implode(",", $value) ."}";
@@ -186,54 +186,54 @@
      * @return array
      */
     public static function cast($table, $rows) {
-      foreach($rows as $index => &$row) {
-        foreach($row as $column => &$value) {
-          if(array_key_exists("JSON", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["JSON"]) === true) {
+      foreach ($rows as $index => &$row) {
+        foreach ($row as $column => &$value) {
+          if (array_key_exists("JSON", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["JSON"]) === true) {
             $value = json_decode($value);
           }
 
-          if(array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
+          if (array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
             $value = json_decode($value);
           }
 
-          if(array_key_exists("int", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["int"]) === true) {
+          if (array_key_exists("int", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["int"]) === true) {
             $value = is_numeric($value) === true ? (int)$value : null;
           }
 
-          if(array_key_exists("float", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["float"]) === true) {
+          if (array_key_exists("float", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["float"]) === true) {
             $value = is_numeric($value) === true ? (float)$value : null;
           }
 
-          if(array_key_exists("double", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["double"]) === true) {
+          if (array_key_exists("double", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["double"]) === true) {
             $value = is_numeric($value) === true ? (double)$value : null;
           }
 
-          if(array_key_exists("bool", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["bool"]) === true) {
+          if (array_key_exists("bool", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["bool"]) === true) {
             $value = $value === "t" ? true : false;
           }
 
           // for now (and probably forever) we can only work with 1D arrays
           // since we'll have PG version 8 we can't use JSON :(
-          if(array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) {
+          if (array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) {
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
-            foreach($value as $index => &$v) {
+            foreach ($value as $index => &$v) {
               $v = is_numeric($v) === true ? (int)$v : null;
             }
           }
 
-          if(array_key_exists("[float]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[float]"]) === true) {
+          if (array_key_exists("[float]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[float]"]) === true) {
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
-            foreach($value as $index => &$v) {
+            foreach ($value as $index => &$v) {
               $v = is_numeric($v) === true ? (float)$v : null;
             }
           }
 
-          if(array_key_exists("[double]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[double]"]) === true) {
+          if (array_key_exists("[double]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[double]"]) === true) {
             $value = trim($value, "{}");
             $value = $value === "" ? [] : explode(",", $value);
-            foreach($value as $index => &$v) {
+            foreach ($value as $index => &$v) {
               $v = is_numeric($v) === true ? (double)$v : null;
             }
           }
@@ -261,11 +261,11 @@
     public static function executeQuery($table, $query, $params = []) {
       $dbConnection = Moedoo::db(Config::get("DB_HOST"), Config::get("DB_PORT"), Config::get("DB_USER"), Config::get("DB_PASSWORD"), Config::get("DB_NAME"));
 
-      if(pg_send_query_params($dbConnection, $query, $params)) {
+      if (pg_send_query_params($dbConnection, $query, $params)) {
         $resource = pg_get_result($dbConnection);
         $state = pg_result_error_field($resource, PGSQL_DIAG_SQLSTATE);
-        if($state == 0) {
-          if($resource === false || pg_fetch_all($resource) === false) {
+        if ($state == 0) {
+          if ($resource === false || pg_fetch_all($resource) === false) {
             return [];
           } else {
             return pg_fetch_all($resource);
@@ -289,13 +289,13 @@
               $queryDelete = preg_match("/^DELETE/", $query);
 
               // we won't be giving detailed error in order "protect" the system
-              if($querySelect === 1) {
+              if ($querySelect === 1) {
                 throw new Exception("unable to select from table `". $table ."`", 1);
-              } else if($queryInsert === 1) {
+              } else if ($queryInsert === 1) {
                 throw new Exception("unable to save `". $table ."`", 1);
               } else if ($queryUpdate === 1) {
                 throw new Exception("unable to update `". $table ."`", 1);
-              } else if($queryDelete === 1) {
+              } else if ($queryDelete === 1) {
                 throw new Exception("unable to delete record from table `". $table ."`", 1);
               } else {
                 throw new Exception("error processing query", 1);
@@ -323,7 +323,7 @@
      */
     public static function db($host, $port, $user, $password, $dbname) {
       $dbConnection = pg_pconnect("host={$host} port={$port} user={$user} password={$password} dbname={$dbname}");
-      if($dbConnection === false) {
+      if ($dbConnection === false) {
         Rock::halt(500, "unable to connect to database");
       }
 
@@ -350,20 +350,20 @@
       $order_by = "ORDER BY";
 
       // model doesn't have any full-text fields
-      if(count(Config::get("TABLES")[$table]["search"]) === 0) {
+      if (count(Config::get("TABLES")[$table]["search"]) === 0) {
         Rock::halt(400, "table `{$table}` has no searchable fields");
       }
 
       else {
         // building vector...
-        foreach(Config::get("TABLES")[$table]["search"] as $key => $value) {
+        foreach (Config::get("TABLES")[$table]["search"] as $key => $value) {
           $where .= "to_tsvector({$value}) @@ to_tsquery($1) OR ";
         }
 
         $where = substr($where, 0, -4);
 
         // building rank...
-        foreach(Config::get("TABLES")[$table]["search"] as $key => $value) {
+        foreach (Config::get("TABLES")[$table]["search"] as $key => $value) {
           $order_by .= " ts_rank(to_tsvector($value), to_tsquery($1)) DESC, ";
         }
 
@@ -372,7 +372,7 @@
         try {
           $rows = Moedoo::executeQuery($table, "{$query} {$where} {$order_by} {$limit};", $params);
 
-          if(count($rows) === 0) {
+          if (count($rows) === 0) {
             return [];
           }
 
@@ -381,7 +381,7 @@
             $rows = Moedoo::referenceFk($table, $rows, $depth);
             return $rows;
           }
-        } catch(Exception $e) {
+        } catch (Exception $e) {
           throw new Exception($e->getMessage(), 1);
         }
       }
@@ -401,7 +401,7 @@
       try {
         $rows = Moedoo::executeQuery($table, $query, $params);
 
-        if(count($rows) === 0) {
+        if (count($rows) === 0) {
           $count = 0;
         }
 
@@ -410,7 +410,7 @@
         }
 
         return $count;
-      } catch(Exception $e) {
+      } catch (Exception $e) {
         throw new Exception($e->getMessage(), 1);
       }
     }
@@ -433,20 +433,20 @@
       $query = "SELECT {$columns} FROM ". Config::get("TABLE_PREFIX") ."{$table}";
       $params = [];
 
-      if($and === null && $or === null) {
+      if ($and === null && $or === null) {
         $query .= " ORDER BY ". Config::get("TABLES")[$table]["pk"] ." DESC ";
       }
 
       else {
         $query .= " WHERE";
 
-        if($and !== null) {
+        if ($and !== null) {
           $query .= " (";
 
-          foreach($and as $column => $value) {
+          foreach ($and as $column => $value) {
             array_push($params, $value);
 
-            if((array_key_exists("[bool]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[bool]"]) === true) ||
+            if ((array_key_exists("[bool]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[bool]"]) === true) ||
                (array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) ||
                (array_key_exists("[float]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[float]"]) === true) ||
                (array_key_exists("[double]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[double]"]) === true) ||
@@ -461,18 +461,18 @@
           $query = substr($query, 0, -5);
           $query .= ")";
 
-          if($or !== null) {
+          if ($or !== null) {
             $query .= " AND";
           }
         }
 
-        if($or !== null) {
+        if ($or !== null) {
           $query .= " (";
 
-          foreach($or as $column => $value) {
+          foreach ($or as $column => $value) {
             array_push($params, $value);
 
-            if((array_key_exists("[bool]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[bool]"]) === true) ||
+            if ((array_key_exists("[bool]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[bool]"]) === true) ||
                (array_key_exists("[int]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[int]"]) === true) ||
                (array_key_exists("[float]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[float]"]) === true) ||
                (array_key_exists("[double]", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["[double]"]) === true) ||
@@ -495,7 +495,7 @@
       try {
         $rows = Moedoo::executeQuery($table, $query, $params);
 
-        if(count($rows) === 0) {
+        if (count($rows) === 0) {
           return [];
         }
 
@@ -525,10 +525,10 @@
       $holders = []; // ${$index}
       $params = [];
 
-      foreach($data as $column => $value) {
+      foreach ($data as $column => $value) {
         array_push($columns, $column);
 
-        if(array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
+        if (array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
           array_push($holders, "ST_GeomFromGeoJSON(\${$count})");
         }
 
@@ -549,7 +549,7 @@
         $rows = Moedoo::executeQuery($table, $query, $params);
 
         // currently we're only supporting single row insert
-        if(count($rows) === 1) {
+        if (count($rows) === 1) {
           $rows = Moedoo::cast($table, $rows);
           $rows = Moedoo::referenceFk($table, $rows, $depth);
           return $rows[0];
@@ -579,8 +579,8 @@
       $params = [];
       $columns = Moedoo::buildReturn($table);
 
-      foreach($data as $column => $value) {
-        if(array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
+      foreach ($data as $column => $value) {
+        if (array_key_exists("geometry", Config::get("TABLES")[$table]) === true && in_array($column, Config::get("TABLES")[$table]["geometry"]) === true) {
           array_push($set, $column."=ST_GeomFromGeoJSON(\${$count})");
         }
 
@@ -600,7 +600,7 @@
         $rows = Moedoo::executeQuery($table, $query, $params);
 
         // currently we're only supporting single row update
-        if(count($rows) === 1) {
+        if (count($rows) === 1) {
           $rows = Moedoo::cast($table, $rows);
           $rows = Moedoo::referenceFk($table, $rows, $depth);
           return $rows[0];
@@ -610,7 +610,7 @@
         else {
           throw new Exception("`{$table}` entry with id `{$id}` does not exist", 1);
         }
-      } catch(Exception $e) {
+      } catch (Exception $e) {
         throw new Exception($e->getMessage(), 1);
       }
     }
@@ -638,12 +638,12 @@
         $rows = Moedoo::executeQuery($table, $query, $params);
 
         // currently we're only supporting single row deletion
-        if(count($rows) === 1) {
+        if (count($rows) === 1) {
           return $rows[0];
-        } elseif(count($rows) === 0) {
+        } elseif (count($rows) === 0) {
           throw new Exception("`{$table}` with resource id `{$id}` does not exist", 1);
         }
-      } catch(Exception $e) {
+      } catch (Exception $e) {
         throw new Exception($e->getMessage(), 1);
       }
     }

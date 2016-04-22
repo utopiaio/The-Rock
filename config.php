@@ -162,7 +162,7 @@
      * @param string $key
      */
     public static function get($key = "TheRock") {
-      if(array_key_exists($key, Config::$CONFIG) === false) {
+      if (array_key_exists($key, Config::$CONFIG) === false) {
         throw new Exception("undefined key `{$key}`", 1);
       }
 
