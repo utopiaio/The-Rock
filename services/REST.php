@@ -34,6 +34,7 @@
           // selects takes depth by reference, so we'll be passing a copy
           $depth = $defaultDepth;
           $result = $id === -1 ? Moedoo::select($table, null, null, $depth) : Moedoo::select($table, [Config::get("TABLES")[$table]["pk"] => $id], null, $depth);
+          // $result = $id === -1 ? Moedoo::selectJoin($table) : Moedoo::select($table, [Config::get("TABLES")[$table]["pk"] => $id], null, $depth);
 
           if($id === -1) {
             Rock::JSON($result, 200);
