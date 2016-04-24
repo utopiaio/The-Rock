@@ -1,6 +1,6 @@
 <?php
   $__REST__['graph'] = function($routeInfo) {
-    $defaultDepth = Config::get("DEFAULT_DEPTH");
+    $defaultDepth = Config::get('QUERY_DEPTH');
     $authRequests = Config::get('AUTH_REQUESTS')['GET'];
     $authForbiddenRequests = Config::get('FORBIDDEN_REQUESTS')['GET'];
     $user = Rock::hasValidToken();

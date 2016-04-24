@@ -21,7 +21,7 @@
         else if(isset($_GET["limit"]) === true && preg_match("/^\d+$/", $_GET["limit"]) === 1) {
           $limit = $_GET["limit"];
           $count = 0;
-          $depth = $defaultDepth;
+          $depth = Config::get("QUERY_DEPTH");
 
           if(isset($_GET["offset"]) === true && preg_match("/^\d+$/", $_GET["offset"]) === 1) {
             $count = $_GET["offset"];
@@ -32,7 +32,7 @@
 
         else {
           // selects takes depth by reference, so we'll be passing a copy
-          $depth = $defaultDepth;
+          $depth = $id === -1 ? Config::get("QUERY_DEPTH") : $defaultDepth;
           $result = $id === -1 ? Moedoo::select($table, null, null, $depth) : Moedoo::select($table, [Config::get("TABLES")[$table]["pk"] => $id], null, $depth);
 
           if($id === -1) {

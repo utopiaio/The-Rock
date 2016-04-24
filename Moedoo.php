@@ -181,6 +181,11 @@
      * given an array of rows straight out of pg it'll cast the appropriate
      * type according to `config`
      *
+     * by far this is THEE most expensive operation.
+     * ~everything is returned as string.
+     * isn't that why we have data-types on database columns
+     * [ SIGH ]
+     *
      * @param string $table - table on which to apply the casting
      * @param array $rows
      * @return array
