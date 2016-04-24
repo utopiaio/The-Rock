@@ -181,6 +181,11 @@
      * given an array of rows straight out of pg it'll cast the appropriate
      * type according to `config`
      *
+     * by far this is THEE most expensive operation.
+     * ~everything is returned as string.
+     * isn't that why we have data-types on database columns
+     * [ SIGH ]
+     *
      * @param string $table - table on which to apply the casting
      * @param array $rows
      * @return array
@@ -410,6 +415,52 @@
         }
 
         return $count;
+      } catch (Exception $e) {
+        throw new Exception($e->getMessage(), 1);
+      }
+    }
+
+
+
+    /**
+     * Selects ALL
+     * this is to be used on queries where depth isn't required (query)
+     * all FK will be LEFT JOIN-ed
+     *
+     * @param String $table table to operate join on
+     * @return Array
+     */
+    public static function selectJoin($table) {
+      $columns = [Moedoo::buildReturn($table)];
+      $joinQuery = "";
+
+      foreach (Config::get("TABLES")[$table]["fk"] as $fkColumn => $rule) {
+        if (preg_match("/^\{.+\}$/", $fkColumn) === 0 || preg_match("/^\{.+\}$/", $fkColumn) === false) {
+          array_push($columns, Moedoo::buildReturn($rule["table"]));
+          $joinQuery .= " LEFT JOIN ".Config::get("TABLE_PREFIX") ."{$rule['table']} ON ". Config::get("TABLE_PREFIX") ."{$table}.{$fkColumn}=". Config::get("TABLE_PREFIX") ."{$rule['table']}.{$rule['references']}";
+        }
+      }
+
+      $columns = implode(',', $columns);
+      $query = "SELECT {$columns} FROM ". Config::get("TABLE_PREFIX") ."{$table}{$joinQuery}";
+      $query .= " ORDER BY ". Config::get("TABLES")[$table]["pk"] ." DESC;";
+
+      try {
+        $rows = Moedoo::executeQuery($table, $query, []);
+
+        if (count($rows) === 0) {
+          return [];
+        }
+
+        else {
+          $rows = Moedoo::cast($table, $rows);
+
+          foreach (Config::get("TABLES")[$table]["fk"] as $fkColumn => $rule) {
+            $rows = Moedoo::cast($rule["table"], $rows);
+          }
+
+          return $rows;
+        }
       } catch (Exception $e) {
         throw new Exception($e->getMessage(), 1);
       }
