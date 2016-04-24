@@ -46,7 +46,6 @@
       "DB_PORT" => 5432,
       "DB_NAME" => "rock",
       "DEFAULT_DEPTH" => 1,
-      "QUERY_DEPTH" => 1, // will be used on QUERY + GRAPH requests
 
       // reference key (to be used for reverse referencing)
       "REFERENCE_KEY" => "reference",
@@ -120,7 +119,8 @@
           "search"    => ["user_full_name", "user_username"],
           "fk"        => [
             "user_group" => ["table" => "user_group", "references" => "user_group_id"]
-          ]
+          ],
+          "depth"     => 2
         ],
         "user_group" => [
           "pk"        => "user_group_id",
