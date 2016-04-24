@@ -1,6 +1,5 @@
 <?php
   $__REST__['graph'] = function($routeInfo) {
-    $defaultDepth = Config::get('QUERY_DEPTH');
     $authRequests = Config::get('AUTH_REQUESTS')['GET'];
     $authForbiddenRequests = Config::get('FORBIDDEN_REQUESTS')['GET'];
     $user = Rock::hasValidToken();
@@ -9,7 +8,7 @@
     $return = [];
 
     foreach ($ql as $key => $table) {
-      $depth = $defaultDepth;
+      $depth = array_key_exists('depth', Config::get('TABLES')[$table]) === true ? Config::get('TABLES')[$table]['depth'] : Config::get('DEFAULT_DEPTH');
 
       // checking table exits...
       if (array_key_exists($table, Config::get('TABLES')) === false) {

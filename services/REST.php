@@ -1,7 +1,7 @@
 <?php
   $__REST__["REST"] = function ($routeInfo) {
-    $defaultDepth = Config::get("DEFAULT_DEPTH");
     $table = $routeInfo[2]["table"];
+    $depth = array_key_exists('depth', Config::get('TABLES')[$table]) === true ? Config::get('TABLES')[$table]['depth'] : Config::get('DEFAULT_DEPTH');
     $id = array_key_exists("id", $routeInfo[2]) === true ? $routeInfo[2]["id"] : -1;
     $count = array_key_exists("count", $routeInfo[2]);
 
@@ -9,7 +9,7 @@
       case "GET":
         if(isset($_GET["q"]) === true && $id === -1) {
           $limit = (isset($_GET["limit"]) === true && preg_match("/^\d+$/", $_GET["limit"])) ? $_GET["limit"] : "ALL";
-          Rock::JSON(Moedoo::search($table, $_GET["q"], $limit, $defaultDepth), 200);
+          Rock::JSON(Moedoo::search($table, $_GET["q"], $limit, $default), 200);
         }
 
         else if($count === true) {
@@ -21,7 +21,6 @@
         else if(isset($_GET["limit"]) === true && preg_match("/^\d+$/", $_GET["limit"]) === 1) {
           $limit = $_GET["limit"];
           $count = 0;
-          $depth = Config::get("QUERY_DEPTH");
 
           if(isset($_GET["offset"]) === true && preg_match("/^\d+$/", $_GET["offset"]) === 1) {
             $count = $_GET["offset"];
@@ -32,7 +31,6 @@
 
         else {
           // selects takes depth by reference, so we'll be passing a copy
-          $depth = $id === -1 ? Config::get("QUERY_DEPTH") : $defaultDepth;
           $result = $id === -1 ? Moedoo::select($table, null, null, $depth) : Moedoo::select($table, [Config::get("TABLES")[$table]["pk"] => $id], null, $depth);
 
           if($id === -1) {
@@ -68,7 +66,7 @@
         }
 
         try {
-          $result = Moedoo::insert($table, $body, $defaultDepth);
+          $result = Moedoo::insert($table, $body, $default);
         } catch(Exception $e) {
           Rock::halt(400, $e->getMessage());
         }
@@ -95,7 +93,7 @@
         }
 
         try {
-          $result = Moedoo::update($table, $body, $id, $defaultDepth);
+          $result = Moedoo::update($table, $body, $id, $default);
         } catch(Exception $e) {
           Rock::halt(400, $e->getMessage());
         }
