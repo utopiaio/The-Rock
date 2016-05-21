@@ -21,7 +21,10 @@
           }
 
           header('HTTP/1.1 200 OK');
-          header("Content-Type: {$mime}");
+          // JSON files are read as text files --- we're making sure json are read accordingly
+          strtolower(substr($file, strrpos($file, '.') + 1)) === 'json' ?
+            header('Content-Type: application/json;charset=utf-8') :
+            header("Content-Type: {$mime}");
 
           if ($mime === false) {
             header('Content-Disposition: attachment;');
