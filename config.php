@@ -37,7 +37,7 @@
       "S3_UPLOAD_URL" => "@S3", // appended to the host, http://rock.io/@S3
       "S3_MAX_UPLOAD_SIZE" => 102400, // in bytes (that's ~100KB)
       "S3_FILE_NAME_SIZE" => 6,
-      "S3_ALLOWED_MIME" => ["image/jpeg", "image/png", "image/gif", "application/pdf", "text/rtf", "application/epub+zip", "text/plain", "application/octet-stream", "application/zip"],
+      "S3_ALLOWED_MIME" => ["image/jpeg", "image/png", "image/gif", "application/pdf", "text/rtf", "application/epub+zip", "text/plain", "application/json", "application/octet-stream", "application/zip"],
 
       // database
       "DB_HOST" => "localhost",
