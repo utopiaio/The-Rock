@@ -9,7 +9,7 @@
       case 'GET':
         if (isset($_GET['q']) === true && $id === -1) {
           $limit = (isset($_GET['limit']) === true && preg_match('/^\d+$/', $_GET['limit'])) ? $_GET['limit'] : 'ALL';
-          Rock::JSON(Moedoo::search($table, $_GET['q'], $limit, $default), 200);
+          Rock::JSON(Moedoo::search($table, $_GET['q'], $limit, $depth), 200);
         }
 
         else if ($count === true) {
@@ -66,7 +66,7 @@
         }
 
         try {
-          $result = Moedoo::insert($table, $body, $default);
+          $result = Moedoo::insert($table, $body, $depth);
         } catch(Exception $e) {
           Rock::halt(400, $e->getMessage());
         }
@@ -93,7 +93,7 @@
         }
 
         try {
-          $result = Moedoo::update($table, $body, $id, $default);
+          $result = Moedoo::update($table, $body, $id, $depth);
         } catch(Exception $e) {
           Rock::halt(400, $e->getMessage());
         }
