@@ -8,7 +8,7 @@
      * @param array $depth
      * @return array
      */
-    public static function referenceFk ($table, $rows, &$depth = 1) {
+    public static function referenceFk($table, $rows, &$depth = 1) {
       if ($depth > 0 || $depth === -1) {
         if ($depth > 0) {
           $depth--;
@@ -126,7 +126,7 @@
      * @param string $table
      * @return array
      */
-    public static function buildReturn ($table) {
+    public static function buildReturn($table) {
       $build = '';
 
       foreach (Config::get('TABLES')[$table]['returning'] as $index => $column) {
@@ -149,7 +149,7 @@
      * @param array $data - data to be prepared for db operation
      * @return array - database operation ready data
      */
-    public static function castForPg ($table, $data) {
+    public static function castForPg($table, $data) {
       foreach ($data as $column => &$value) {
         if (array_key_exists('JSON', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['JSON']) === true) {
           $value = json_encode($value);
@@ -187,7 +187,7 @@
      * @param array $rows
      * @return array
      */
-    public static function cast ($table, $rows) {
+    public static function cast($table, $rows) {
       foreach ($rows as $index => &$row) {
         foreach ($row as $column => &$value) {
           if (array_key_exists('JSON', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['JSON']) === true) {
@@ -259,7 +259,7 @@
      * @param  Array $params
      * @return Array
      */
-    public static function executeQuery ($table, $query, $params = []) {
+    public static function executeQuery($table, $query, $params = []) {
       $dbConnection = Moedoo::db(Config::get('DB_HOST'), Config::get('DB_PORT'), Config::get('DB_USER'), Config::get('DB_PASSWORD'), Config::get('DB_NAME'));
 
       if (pg_send_query_params($dbConnection, $query, $params)) {
@@ -321,7 +321,7 @@
      * @param string $host
      * @return connection resource
      */
-    public static function db ($host, $port, $user, $password, $dbname) {
+    public static function db($host, $port, $user, $password, $dbname) {
       $dbConnection = pg_pconnect("host={$host} port={$port} user={$user} password={$password} dbname={$dbname}");
       if ($dbConnection === false) {
         Rock::halt(500, 'unable to connect to database');
@@ -339,7 +339,7 @@
      * @param string $limit
      * @param integer $depth
      */
-    public static function search ($table, $q, $limit = 'ALL', $depth = 1) {
+    public static function search($table, $q, $limit = 'ALL', $depth = 1) {
       $columns = Moedoo::buildReturn($table);
       $q = preg_replace('/ +/', '|', trim($q));
       $q = preg_replace('/ /', '|', $q);
@@ -393,7 +393,7 @@
      * @param string $table
      * @return integer
      */
-    public static function count ($table) {
+    public static function count($table) {
       $query = 'SELECT count('. Config::get('TABLES')[$table]['pk'] .') as count FROM '. Config::get('TABLE_PREFIX') ."{$table};";
       $params = [];
       try {
@@ -514,7 +514,7 @@
      * @param array $data - data to be inserted
      * @return array - the newly inserted row
      */
-    public static function insert ($table, $data, $depth = 1) {
+    public static function insert($table, $data, $depth = 1) {
       $data = Moedoo::castForPg($table, $data);
       $count = 1;
       $columns = [];
@@ -567,7 +567,7 @@
      * @param array $data - data which to replace on
      * @return array | null
      */
-    public static function update ($table, $data, $id, $depth = 1) {
+    public static function update($table, $data, $id, $depth = 1) {
       $data = Moedoo::castForPg($table, $data);
       $count = 1;
       $set = [];
@@ -623,7 +623,7 @@
      * @param integer $id - id on which to delete on
      * @return array - deleted row
      */
-    public static function delete ($table, $id) {
+    public static function delete($table, $id) {
       $params = [$id];
       $columns = Moedoo::buildReturn($table);
 
