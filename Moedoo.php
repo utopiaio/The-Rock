@@ -40,7 +40,7 @@
 
                     else {
                       $illBeBack = $depth;
-                      $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $value], null, $depth);
+                      $referencedRow = Moedoo::select($referenceRule['table'], [$referenceRule['references'] => $value], null, $depth);
                       $depth = $illBeBack;
 
                       if (count($referencedRow) === 1) {
@@ -95,7 +95,7 @@
 
                   else {
                     $illBeBack = $depth;
-                    $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $row[$column]], null, $depth);
+                    $referencedRow = Moedoo::select($referenceRule['table'], [$referenceRule['references'] => $row[$column]], null, $depth);
                     $depth = $illBeBack;
 
                     if (count($referencedRow) === 1) {
@@ -501,7 +501,7 @@
 
         else {
           $rows = Moedoo::cast($table, $rows);
-          $rows = Moedoo::referenceFk($table, $rows, $depth);
+          // $rows = Moedoo::referenceFk($table, $rows, $depth);
           return $rows;
         }
       } catch (Exception $e) {
