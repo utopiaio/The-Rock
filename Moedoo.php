@@ -83,30 +83,42 @@
               }
             }
 
+            /**
+             * col_name --- single foreign key reference
+             */
             else {
-              foreach ($rows as $index => &$row) {
-                if (array_key_exists($column, $row) === true) {
-                  if (array_key_exists("{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}", $cache) === true) {
-                    if (is_null($cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"]) === false) {
-                      $row[$column] = $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"];
-                    }
-                  }
+              // building hash map of unique fk id (better performance than `array_unique`)
+              // associative array [id => id];
+              $INCLUDES = [];
+              foreach ($rows as $index => $row) {
+                $INCLUDES[$row[$column]] = $row[$column];
+              }
 
-                  else {
-                    $illBeBack = $depth;
-                    $referencedRow = Moedoo::select($referenceRule['table'], [$referenceRule['references'] => $row[$column]], null, $depth);
-                    $depth = $illBeBack;
+              $columns = Moedoo::buildReturn($referenceRule['table']);
+              $INCLUDES = implode(', ', $INCLUDES);
+              $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES])";
 
-                    if (count($referencedRow) === 1) {
-                      $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"] = $referencedRow[0];
-                      $row[$column] = $referencedRow[0];
-                    }
+              try {
+                $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
+                $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
 
-                    else {
-                      $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"] = null;
-                    }
+                // building map table...
+                // include row id => include row
+                $includeRowsMap = [];
+                foreach ($includeRows as $index => $includeRow) {
+                  $includeRowsMap[$includeRow[$referenceRule['references']]] = $includeRow;
+                }
+
+                // setting fk using the map...
+                foreach ($rows as $index => &$row) {
+                  if (isset($includeRowsMap[$row[$column]])) {
+                    $row[$column] = $includeRowsMap[$row[$column]];
+                  } else {
+                    $row[$column] = null; // reference no longer exits
                   }
                 }
+              } catch (Exception $e) {
+                throw new Exception($e->getMessage(), 1);
               }
             }
           }
