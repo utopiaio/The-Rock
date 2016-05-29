@@ -241,7 +241,7 @@
             $value = is_numeric($value) === true ? (double)$value : null;
           }
 
-          else if ($CAST_FLAG['double'][$column] === true) {
+          else if ($CAST_FLAG['bool'][$column] === true) {
             $value = $value === 't' ? true : false;
           }
 
