@@ -65,26 +65,66 @@
 
             /**
              * {col_name} --- reverse reference™️
-             * `Moedoo::select` will handle the appropriate casting for selection
              */
             else if (preg_match('/^\{.+\}$/', $column) === 1) {
               $column = trim($column, '{}');
 
+              $INCLUDES = [];
+              $REFERENCE_KEY = Config::get('REFERENCE_KEY');
               foreach ($rows as $index => &$row) {
-                // we won't be short-circuiting the if logic for performance reasons
-                if (array_key_exists("{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}", $cache) === true) {
-                  if (is_null($cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"]) === false) {
-                    $row[Config::get('REFERENCE_KEY')][$column] = $cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"];
+                array_push($INCLUDES, $row[$referenceRule['referenced_by']]);
+              }
+
+              $columns = Moedoo::buildReturn($referenceRule['table']);
+              $INCLUDES = implode(', ', $INCLUDES);
+
+              // enforcing fk to be limited to int type
+              if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
+                $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} && ARRAY[$INCLUDES]";
+              }
+
+              else if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
+                $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} = ANY(ARRAY[$INCLUDES])";
+              }
+
+              try {
+                $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
+                $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
+
+                $illBeBack = $depth;
+                while ($depth > 0) { $includeRows = Moedoo::referenceFk($referenceRule['table'], $includeRows, $depth); }
+                $depth = $illBeBack;
+
+                // this block will be looking for reference in [fk, fk]
+                if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
+                  foreach ($rows as $index => &$row) {
+                    $reverseInclude = [];
+
+                    foreach ($includeRows as $includeIndex => $includeRow) {
+                      if (in_array($row[$referenceRule['referenced_by']], $includeRow[$referenceRule['referencing_column']])) {
+                        array_push($reverseInclude, $includeRow);
+                      }
+                    }
+
+                    $row[$REFERENCE_KEY][$column] = $reverseInclude;
                   }
                 }
 
-                else {
-                  $illBeBack = $depth;
-                  $referencedRow = Moedoo::select($referenceRule['table'], [$referenceRule['referencing_column'] => $row[$referenceRule['referenced_by']]], null, $depth);
-                  $depth = $illBeBack;
-                  $row[Config::get('REFERENCE_KEY')][$column] = $referencedRow;
-                  $cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"] = $referencedRow;
+                else if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
+                  foreach ($rows as $index => &$row) {
+                    $reverseInclude = [];
+
+                    foreach ($includeRows as $includeIndex => $includeRow) {
+                      if ($includeRow[$referenceRule['referencing_column']] === $row[$referenceRule['referenced_by']]) {
+                        array_push($reverseInclude, $includeRow);
+                      }
+                    }
+
+                    $row[$REFERENCE_KEY][$column] = $reverseInclude;
+                  }
                 }
+              } catch (Exception $e) {
+                throw new Exception($e->getMessage(), 1);
               }
             }
 
@@ -521,7 +561,7 @@
 
         else {
           $rows = Moedoo::cast($table, $rows);
-          // $rows = Moedoo::referenceFk($table, $rows, $depth);
+          $rows = Moedoo::referenceFk($table, $rows, $depth);
           return $rows;
         }
       } catch (Exception $e) {
