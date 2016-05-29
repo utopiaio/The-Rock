@@ -5,22 +5,22 @@
      *
      * @return array - user info from db
      */
-    public static function authenticated($method, $table) {
+    public static function authenticated ($method, $table) {
       $requestHeaders = Rock::getHeaders();
 
-      if(array_key_exists(Config::get("JWT_HEADER"), $requestHeaders) === true) {
+      if (array_key_exists(Config::get('JWT_HEADER'), $requestHeaders) === true) {
         try {
-          $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get("JWT_HEADER")], Config::get("JWT_KEY"), ["HS256"]);
-        } catch(Exception $e) {
-          Rock::halt(401, "invalid authorization token");
+          $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get('JWT_HEADER')], Config::get('JWT_KEY'), ['HS256']);
+        } catch (Exception $e) {
+          Rock::halt(401, 'invalid authorization token');
         }
 
         $depth = 1;
-        $result = Moedoo::select("user", [Config::get("TABLES")["user"]["pk"] => $decoded["id"]], null, $depth);
+        $result = Moedoo::select('user', [Config::get('TABLES')['user']['pk'] => $decoded['id']], null, $depth);
 
-        if(count($result) === 1) {
+        if (count($result) === 1) {
           $user = $result[0];
-          $permissionMap = ["GET" => "read", "POST" => "create", "PATCH" => "update", "DELETE" => "delete"];
+          $permissionMap = ['GET' => 'read', 'POST' => 'create', 'PATCH' => 'update', 'DELETE' => 'delete'];
 
           /**
            * authentication pseudo logic steps
@@ -31,23 +31,23 @@
            */
 
           // 1
-          if($user["user_status"] === false) {
-            Rock::halt(401, "account has been suspended");
+          if ($user['user_status'] === false) {
+            Rock::halt(401, 'account has been suspended');
           }
 
           // 2
-          else if(is_null($user["user_group"]) === true) {
-            Rock::halt(401, "account permission set can not be identified");
+          elseif (is_null($user['user_group']) === true) {
+            Rock::halt(401, 'account permission set can not be identified');
           }
 
           // 2
-          else if($user["user_group"]["user_group_status"] === false) {
+          elseif ($user['user_group']['user_group_status'] === false) {
             Rock::halt(401, "user group `{$user["user_group"]["user_group_name"]}` has been suspended");
           }
 
           // 3
-          else if(array_key_exists("user_group_has_permission_{$permissionMap[$method]}_{$table}", $user["user_group"]) === true) {
-            if($user["user_group"]["user_group_has_permission_{$permissionMap[$method]}_{$table}"] === true) {
+          elseif (array_key_exists("user_group_has_permission_{$permissionMap[$method]}_{$table}", $user['user_group']) === true) {
+            if ($user['user_group']["user_group_has_permission_{$permissionMap[$method]}_{$table}"] === true) {
               // all permission checks are a go, proceed
               // any post-pre authentication logic go here
             }
@@ -63,13 +63,79 @@
         }
 
         else {
-          Rock::halt(401, "token no longer valid");
+          Rock::halt(401, 'token no longer valid');
         }
       }
 
-      else if (in_array($table, Config::get("AUTH_REQUESTS")[$method]) === true) {
-        Rock::halt(401, "missing authentication header `". Config::get("JWT_HEADER") ."`");
+      elseif (in_array($table, Config::get('AUTH_REQUESTS')[$method]) === true) {
+        Rock::halt(401, 'missing authentication header `'. Config::get('JWT_HEADER') .'`');
       }
+    }
+
+
+
+    /**
+     * checks the request has a valid token + user is active
+     * used for non CURD table mapping
+     * else returns false
+     *
+     * @return A.Array | false
+     */
+    public static function hasValidToken () {
+      $requestHeaders = Rock::getHeaders();
+
+      if (array_key_exists(Config::get('JWT_HEADER'), $requestHeaders) === true) {
+        try {
+          $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get('JWT_HEADER')], Config::get('JWT_KEY'), ['HS256']);
+        } catch (Exception $e) {
+          return false;
+        }
+
+        $depth = 1;
+        $result = Moedoo::select('user', [Config::get('TABLES')['user']['pk'] => $decoded['id']], null, $depth);
+
+        if (count($result) === 1) {
+          $user = $result[0];
+
+          // user suspended
+          if ($user['user_status'] === false) {
+            return false;
+          }
+
+          // user doesn't belong to a user-group
+          elseif (is_null($user['user_group']) === true) {
+            return false;
+          }
+
+          // user-group has been suspended
+          elseif ($user['user_group']['user_group_status'] === false) {
+            return false;
+          }
+
+          return $user;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+
+
+
+    /**
+     * has permission
+     * @param $user A.Array
+     * @param $permission String
+     * @return Boolean
+     */
+    public static function hasPermission ($user, $permission) {
+      if (array_key_exists($permission, $user['user_group']) === true) {
+        if ($user['user_group'][$permission] === true) return true;
+        else return false;
+      }
+
+      else return false;
     }
 
 
@@ -81,45 +147,45 @@
      * @param string $username
      * @param string $password - raw password
      */
-    public static function authenticate($username, $password) {
+    public static function authenticate ($username, $password) {
       $username = strtolower($username);
-      $username = preg_replace("/ /", "_", $username);
+      $username = preg_replace('/ /', '_', $username);
       $password = Rock::hash($password);
-      $result = Moedoo::select("user", ["user_username" => $username, "user_password" => $password]);
+      $result = Moedoo::select('user', ['user_username' => $username, 'user_password' => $password]);
 
-      if(count($result) === 1) {
+      if (count($result) === 1) {
         $user = $result[0];
 
         // user account has been suspended
-        if($user["user_status"] === false) {
-          Rock::halt(401, "account has been suspended");
+        if ($user['user_status'] === false) {
+          Rock::halt(401, 'account has been suspended');
         }
 
-        else if(is_null($user["user_group"]) === true) {
-          Rock::halt(401, "account permission set can not be identified");
+        elseif (is_null($user['user_group']) === true) {
+          Rock::halt(401, 'account permission set can not be identified');
         }
 
-        else if($user["user_group"]["user_group_status"] === false) {
+        elseif ($user['user_group']['user_group_status'] === false) {
           Rock::halt(401, "user group `{$user["user_group"]["user_group_name"]}` has been suspended");
         }
 
         // all good, proceeding with authentication...
         else {
           $token = [
-            "iss" => Config::get("JWT_ISS"),
-            "iat" => strtotime(Config::get("JWT_IAT")),
-            "id" => $user["user_id"]
+            'iss' => Config::get('JWT_ISS'),
+            'iat' => strtotime(Config::get('JWT_IAT')),
+            'id' => $user['user_id']
           ];
 
           // TODO
           // make a fingerprint so that the token stays locked-down
-          $jwt = Firebase\JWT\JWT::encode($token, Config::get("JWT_KEY"));
-          Rock::JSON(["jwt" => $jwt, "user" => $user], 202);
+          $jwt = Firebase\JWT\JWT::encode($token, Config::get('JWT_KEY'));
+          Rock::JSON(['jwt' => $jwt, 'user' => $user], 202);
         }
       }
 
       else {
-        Rock::halt(401, "wrong username and/or password");
+        Rock::halt(401, 'wrong username and/or password');
       }
     }
 
@@ -136,16 +202,16 @@
      * @param string $table
      * @param string $role
      */
-    public static function check($method, $table) {
-      if(array_key_exists($table, Config::get("TABLES")) === false) {
-        Rock::halt(404, "requested resource `". $table ."` does not exist");
+    public static function check ($method, $table) {
+      if (array_key_exists($table, Config::get('TABLES')) === false) {
+        Rock::halt(404, "requested resource `{$table}` does not exist");
       }
 
-      if(in_array($table, Config::get("FORBIDDEN_REQUESTS")[$method]) === true) {
-        Rock::halt(403, "`". $method ."` method on table `". $table ."` is forbidden");
+      if (in_array($table, Config::get('FORBIDDEN_REQUESTS')[$method]) === true) {
+        Rock::halt(403, "`{$method}` method on table `{$table}` is forbidden");
       }
 
-      if(in_array($table, Config::get("AUTH_REQUESTS")[$method]) === true) {
+      if (in_array($table, Config::get('AUTH_REQUESTS')[$method]) === true) {
         // this is where the tailored permission check is applied...
         Rock::authenticated($method, $table);
       }
@@ -159,16 +225,16 @@
      * @param string $table - table name to check validation against
      * @return associative array representation of the passed body
      */
-    public static function getBody($table = null) {
-      $streamHandle = fopen("php://input", "r");
+    public static function getBody ($table = null) {
+      $streamHandle = fopen('php://input', 'r');
       $body = (string)stream_get_contents($streamHandle);
       fclose($streamHandle);
       $body = Util::toArray($body);
 
-      if($table !== null) {
+      if ($table !== null) {
         // validating payload...
-        foreach($body as $column => $value) {
-          if(in_array($column, Config::get("TABLES")[$table]["columns"]) === false) {
+        foreach ($body as $column => $value) {
+          if (in_array($column, Config::get('TABLES')[$table]['columns']) === false) {
             Rock::halt(400, "unknown column `{$column}` for table `{$table}`");
           }
         }
@@ -185,16 +251,16 @@
      * @param array $data
      * @param integer $status
      */
-    public static function JSON($data, $status = 200) {
+    public static function JSON ($data, $status = 200) {
       $requestHeaders = Rock::getHeaders();
-      $origin = array_key_exists("Origin", $requestHeaders) === true ? $requestHeaders["Origin"] : "*";
-      header("HTTP/1.1 ". $status ." ". Util::$codes[$status]);
+      $origin = array_key_exists('Origin', $requestHeaders) === true ? $requestHeaders['Origin'] : '*';
+      header("HTTP/1.1 {$status} ". Util::$codes[$status]);
       header("Access-Control-Allow-Origin: {$origin}");
-      header("Access-Control-Allow-Methods: ". implode(", ", Config::get("CORS_METHODS")));
-      header("Access-Control-Allow-Headers: ". implode(", ", Config::get("CORS_HEADERS")));
-      header("Access-Control-Allow-Credentials: true");
-      header("Access-Control-Max-Age: ". Config::get("CORS_MAX_AGE"));
-      header("Content-Type: application/json;charset=utf-8");
+      header('Access-Control-Allow-Methods: '. implode(', ', Config::get('CORS_METHODS')));
+      header('Access-Control-Allow-Headers: '. implode(', ', Config::get('CORS_HEADERS')));
+      header('Access-Control-Allow-Credentials: true');
+      header('Access-Control-Max-Age: '. Config::get('CORS_MAX_AGE'));
+      header('Content-Type: application/json;charset=utf-8');
       echo json_encode($data);
     }
 
@@ -207,14 +273,14 @@
      * @param integer $status
      * @param string $message - message to be sent back with `error` property
      */
-    public static function halt($status = 401, $message = null) {
-      if($message === null) {
-        header("HTTP/1.1 ". $status ." ". Util::$codes[$status]);
-        header("Content-Type: application/json;charset=utf-8");
+    public static function halt ($status = 401, $message = null) {
+      if ($message === null) {
+        header("HTTP/1.1 {$status} ". Util::$codes[$status]);
+        header('Content-Type: application/json;charset=utf-8');
       }
 
       else {
-        Rock::JSON(["error" => $message], $status);
+        Rock::JSON(['error' => $message], $status);
       }
 
       exit;
@@ -228,10 +294,10 @@
      * @param string $string
      * @return string
      */
-    public static function hash($string) {
-      $hash = hash_init(Config::get("HASH"));
+    public static function hash ($string) {
+      $hash = hash_init(Config::get('HASH'));
       hash_update($hash, $string);
-      hash_update($hash, Config::get("SALT"));
+      hash_update($hash, Config::get('SALT'));
 
       return hash_final($hash);
     }
@@ -244,11 +310,11 @@
      * exception header
      * 4: unable to process request headers
      */
-    public static function getHeaders() {
+    public static function getHeaders () {
       $headers = getallheaders();
 
-      if($headers === false) {
-        throw new Exception("Error Processing Request", 4);
+      if ($headers === false) {
+        throw new Exception('Error Processing Request', 4);
       }
 
       return $headers;
@@ -262,12 +328,12 @@
      * @param String $tempPath
      * @return Boolean | String
      */
-    public static function MIMEIsAllowed($tempPath) {
+    public static function MIMEIsAllowed ($tempPath) {
       $finfo = finfo_open(FILEINFO_MIME_TYPE);
       $mime = finfo_file($finfo, $tempPath);
       finfo_close($finfo);
 
-      if(in_array($mime, Config::get('S3_ALLOWED_MIME')) === true) {
+      if (in_array($mime, Config::get('S3_ALLOWED_MIME')) === true) {
         return $mime;
       } else {
         return false;
