@@ -16,98 +16,158 @@
 
         if (array_key_exists('fk', Config::get('TABLES')[$table]) === true) {
           $cache = [];
-          $tempDepth = $depth;
 
           foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
             // [col_name] --- multiple columns reference
             if (preg_match('/^\[.+\]$/', $column) === 1) {
               $column = trim($column, '[]'); // stripping the flags
 
+              $INCLUDES = [];
               foreach ($rows as $index => &$row) {
-                $map = [];
+                foreach ($row[$column] as $index => $value) {
+                  $INCLUDES[$value] = $value;
+                }
+              }
 
-                /**
-                 * going through the columns and referencing
-                 * key for "hash-map" is `tableName_referencedColumn_value`
-                 */
-                if (array_key_exists($column, $row) === true) {
+              $columns = Moedoo::buildReturn($referenceRule['table']);
+              $INCLUDES = implode(', ', $INCLUDES);
+              $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES])";
+
+              try {
+                $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
+                $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
+
+                $illBeBack = $depth;
+                while ($depth > 0) { $includeRows = Moedoo::referenceFk($referenceRule['table'], $includeRows, $depth); }
+                $depth = $illBeBack;
+
+                // building map table...
+                // include row id => include row
+                $includeRowsMap = [];
+                foreach ($includeRows as $index => $includeRow) {
+                  $includeRowsMap[$includeRow[$referenceRule['references']]] = $includeRow;
+                }
+
+                // setting fk using the map...
+                foreach ($rows as $index => &$row) {
                   foreach ($row[$column] as $index => $value) {
-                    if (array_key_exists("{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}", $cache) === true) {
-                      if (is_null($cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"]) === false) {
-                        array_push($map, $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"]);
-                      }
-                    }
-
-                    else {
-                      $illBeBack = $depth;
-                      $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $value], null, $depth);
-                      $depth = $illBeBack;
-
-                      if (count($referencedRow) === 1) {
-                        $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"] = $referencedRow[0];
-                        array_push($map, $referencedRow[0]);
-                      }
-
-                      else {
-                        $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$value}"] = null;
-                      }
+                    if (isset($includeRowsMap[$row[$column][$index]])) {
+                      $row[$column][$index] = $includeRowsMap[$row[$column][$index]];
+                    } else {
+                      $row[$column][$index] = null; // reference no longer exits
                     }
                   }
-
-                  $row[$column] = $map;
                 }
+              } catch (Exception $e) {
+                throw new Exception($e->getMessage(), 1);
               }
             }
 
             /**
              * {col_name} --- reverse reference™️
-             * `Moedoo::select` will handle the appropriate casting for selection
              */
             else if (preg_match('/^\{.+\}$/', $column) === 1) {
               $column = trim($column, '{}');
 
+              $INCLUDES = [];
+              $REFERENCE_KEY = Config::get('REFERENCE_KEY');
               foreach ($rows as $index => &$row) {
-                // we won't be short-circuiting the if logic for performance reasons
-                if (array_key_exists("{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}", $cache) === true) {
-                  if (is_null($cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"]) === false) {
-                    $row[Config::get('REFERENCE_KEY')][$column] = $cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"];
+                array_push($INCLUDES, $row[$referenceRule['referenced_by']]);
+              }
+
+              $columns = Moedoo::buildReturn($referenceRule['table']);
+              $INCLUDES = implode(', ', $INCLUDES);
+
+              // enforcing fk to be limited to int type
+              if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
+                $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} && ARRAY[$INCLUDES]";
+              }
+
+              else if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
+                $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} = ANY(ARRAY[$INCLUDES])";
+              }
+
+              try {
+                $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
+                $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
+
+                $illBeBack = $depth;
+                while ($depth > 0) { $includeRows = Moedoo::referenceFk($referenceRule['table'], $includeRows, $depth); }
+                $depth = $illBeBack;
+
+                // this block will be looking for reference in [fk, fk]
+                if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
+                  foreach ($rows as $index => &$row) {
+                    $reverseInclude = [];
+
+                    foreach ($includeRows as $includeIndex => $includeRow) {
+                      if (in_array($row[$referenceRule['referenced_by']], $includeRow[$referenceRule['referencing_column']])) {
+                        array_push($reverseInclude, $includeRow);
+                      }
+                    }
+
+                    $row[$REFERENCE_KEY][$column] = $reverseInclude;
                   }
                 }
 
-                else {
-                  $illBeBack = $depth;
-                  $referencedRow = Moedoo::select($referenceRule['table'], [$referenceRule['referencing_column'] => $row[$referenceRule['referenced_by']]], null, $depth);
-                  $depth = $illBeBack;
-                  $row[Config::get('REFERENCE_KEY')][$column] = $referencedRow;
-                  $cache["{$referenceRule["table"]}_{$referenceRule["referenced_by"]}_{$referenceRule["referencing_column"]}_{$row[$referenceRule["referenced_by"]]}"] = $referencedRow;
+                else if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
+                  foreach ($rows as $index => &$row) {
+                    $reverseInclude = [];
+
+                    foreach ($includeRows as $includeIndex => $includeRow) {
+                      if ($includeRow[$referenceRule['referencing_column']] === $row[$referenceRule['referenced_by']]) {
+                        array_push($reverseInclude, $includeRow);
+                      }
+                    }
+
+                    $row[$REFERENCE_KEY][$column] = $reverseInclude;
+                  }
                 }
+              } catch (Exception $e) {
+                throw new Exception($e->getMessage(), 1);
               }
             }
 
+            /**
+             * col_name --- single foreign key reference
+             */
             else {
-              foreach ($rows as $index => &$row) {
-                if (array_key_exists($column, $row) === true) {
-                  if (array_key_exists("{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}", $cache) === true) {
-                    if (is_null($cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"]) === false) {
-                      $row[$column] = $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"];
-                    }
-                  }
+              // building hash map of unique fk id (better performance than `array_unique`)
+              // associative array [id => id];
+              $INCLUDES = [];
+              foreach ($rows as $index => $row) {
+                $INCLUDES[$row[$column]] = $row[$column];
+              }
 
-                  else {
-                    $illBeBack = $depth;
-                    $referencedRow = Moedoo::select($referenceRule["table"], [$referenceRule["references"] => $row[$column]], null, $depth);
-                    $depth = $illBeBack;
+              $columns = Moedoo::buildReturn($referenceRule['table']);
+              $INCLUDES = implode(', ', $INCLUDES);
+              $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES])";
 
-                    if (count($referencedRow) === 1) {
-                      $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"] = $referencedRow[0];
-                      $row[$column] = $referencedRow[0];
-                    }
+              try {
+                $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
+                $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
 
-                    else {
-                      $cache["{$referenceRule["table"]}_{$referenceRule["references"]}_{$row[$column]}"] = null;
-                    }
+                $illBeBack = $depth;
+                while ($depth > 0) { $includeRows = Moedoo::referenceFk($referenceRule['table'], $includeRows, $depth); }
+                $depth = $illBeBack;
+
+                // building map table...
+                // include row id => include row
+                $includeRowsMap = [];
+                foreach ($includeRows as $index => $includeRow) {
+                  $includeRowsMap[$includeRow[$referenceRule['references']]] = $includeRow;
+                }
+
+                // setting fk using the map...
+                foreach ($rows as $index => &$row) {
+                  if (isset($includeRowsMap[$row[$column]])) {
+                    $row[$column] = $includeRowsMap[$row[$column]];
+                  } else {
+                    $row[$column] = null; // reference no longer exits
                   }
                 }
+              } catch (Exception $e) {
+                throw new Exception($e->getMessage(), 1);
               }
             }
           }
@@ -178,65 +238,68 @@
      * given an array of rows straight out of pg it'll cast the appropriate
      * type according to `config`
      *
-     * by far this is THEE most expensive operation.
-     * ~everything is returned as string.
-     * isn't that why we have data-types on database columns
-     * [ SIGH ]
-     *
      * @param string $table - table on which to apply the casting
      * @param array $rows
      * @return array
      */
     public static function cast($table, $rows) {
+      // we have rows, setting rows...
+      // this right here saves gives 200% performance boost on large datasets query
+      $CAST_FLAG = [
+        'JSON' => [],
+        'geometry' => [],
+        'int' => [],
+        'float' => [],
+        'double' => [],
+        'bool' => [],
+        '[int]' => []
+      ];
+
+      if (count($rows) > 0) {
+        foreach (Config::get('TABLES')[$table]['returning'] as $index => $column) {
+          $CAST_FLAG['JSON'][$column] = array_key_exists('JSON', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['JSON']) === true;
+          $CAST_FLAG['geometry'][$column] = array_key_exists('geometry', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['geometry']) === true;
+          $CAST_FLAG['int'][$column] = array_key_exists('int', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['int']) === true;
+          $CAST_FLAG['float'][$column] = array_key_exists('float', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['float']) === true;
+          $CAST_FLAG['double'][$column] = array_key_exists('double', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['double']) === true;
+          $CAST_FLAG['bool'][$column] = array_key_exists('bool', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['bool']) === true;
+          $CAST_FLAG['[int]'][$column] = array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true;
+        }
+      }
+
       foreach ($rows as $index => &$row) {
         foreach ($row as $column => &$value) {
-          if (array_key_exists('JSON', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['JSON']) === true) {
+          if ($CAST_FLAG['JSON'][$column] === true) {
             $value = json_decode($value);
           }
 
-          if (array_key_exists('geometry', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['geometry']) === true) {
+          else if ($CAST_FLAG['geometry'][$column] === true) {
             $value = json_decode($value);
           }
 
-          if (array_key_exists('int', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['int']) === true) {
+          else if ($CAST_FLAG['int'][$column] === true) {
             $value = is_numeric($value) === true ? (int)$value : null;
           }
 
-          if (array_key_exists('float', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['float']) === true) {
+          else if ($CAST_FLAG['float'][$column] === true) {
             $value = is_numeric($value) === true ? (float)$value : null;
           }
 
-          if (array_key_exists('double', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['double']) === true) {
+          else if ($CAST_FLAG['double'][$column] === true) {
             $value = is_numeric($value) === true ? (double)$value : null;
           }
 
-          if (array_key_exists('bool', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['bool']) === true) {
+          else if ($CAST_FLAG['bool'][$column] === true) {
             $value = $value === 't' ? true : false;
           }
 
           // for now (and probably forever) we can only work with 1D arrays
           // since we'll have PG version 8 we can't use JSON :(
-          if (array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true) {
+          else if ($CAST_FLAG['[int]'][$column] === true) {
             $value = trim($value, '{}');
             $value = $value === '' ? [] : explode(',', $value);
             foreach ($value as $index => &$v) {
               $v = is_numeric($v) === true ? (int)$v : null;
-            }
-          }
-
-          if (array_key_exists('[float]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[float]']) === true) {
-            $value = trim($value, '{}');
-            $value = $value === '' ? [] : explode(',', $value);
-            foreach ($value as $index => &$v) {
-              $v = is_numeric($v) === true ? (float)$v : null;
-            }
-          }
-
-          if (array_key_exists('[double]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[double]']) === true) {
-            $value = trim($value, '{}');
-            $value = $value === '' ? [] : explode(',', $value);
-            foreach ($value as $index => &$v) {
-              $v = is_numeric($v) === true ? (double)$v : null;
             }
           }
         }
