@@ -196,7 +196,7 @@
       ];
 
       if (count($rows) > 0) {
-        foreach ($rows[0] as $column => $value) {
+        foreach (Config::get('TABLES')[$table]['returning'] as $index => $column) {
           $CAST_FLAG['JSON'][$column] = array_key_exists('JSON', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['JSON']) === true;
           $CAST_FLAG['geometry'][$column] = array_key_exists('geometry', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['geometry']) === true;
           $CAST_FLAG['int'][$column] = array_key_exists('int', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['int']) === true;
