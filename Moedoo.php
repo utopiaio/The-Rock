@@ -28,7 +28,7 @@
               }
 
               $columns = Moedoo::buildReturn($referenceRule['table']);
-              $INCLUDES = implode(', ', $INCLUDES);
+              $INCLUDES = str_replace(', ,', ',', implode(', ', $INCLUDES));
               $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES])";
 
               try {
@@ -74,7 +74,7 @@
               }
 
               $columns = Moedoo::buildReturn($referenceRule['table']);
-              $INCLUDES = implode(', ', $INCLUDES);
+              $INCLUDES = str_replace(', ,', ',', implode(', ', $INCLUDES));
 
               // enforcing fk to be limited to int type
               if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
@@ -138,7 +138,7 @@
               }
 
               $columns = Moedoo::buildReturn($referenceRule['table']);
-              $INCLUDES = implode(', ', $INCLUDES);
+              $INCLUDES = str_replace(', ,', ',', implode(', ', $INCLUDES));
               $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES])";
 
               try {
