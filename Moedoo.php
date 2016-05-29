@@ -37,6 +37,10 @@
                 $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
                 $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
 
+                $illBeBack = $depth;
+                while ($depth > 0) { $includeRows = Moedoo::referenceFk($referenceRule['table'], $includeRows, $depth); }
+                $depth = $illBeBack;
+
                 // building map table...
                 // include row id => include row
                 $includeRowsMap = [];
@@ -102,6 +106,10 @@
               try {
                 $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
                 $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
+
+                $illBeBack = $depth;
+                while ($depth > 0) { $includeRows = Moedoo::referenceFk($referenceRule['table'], $includeRows, $depth); }
+                $depth = $illBeBack;
 
                 // building map table...
                 // include row id => include row
