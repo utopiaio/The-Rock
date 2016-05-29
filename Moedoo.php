@@ -69,7 +69,7 @@
 
               $INCLUDES = [];
               $REFERENCE_KEY = Config::get('REFERENCE_KEY');
-              foreach ($rows as $index => &$row) {
+              foreach ($rows as $index => $row) {
                 array_push($INCLUDES, $row[$referenceRule['referenced_by']]);
               }
 
