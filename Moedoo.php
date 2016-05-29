@@ -15,8 +15,6 @@
         }
 
         if (array_key_exists('fk', Config::get('TABLES')[$table]) === true) {
-          $cache = [];
-
           foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
             // [col_name] --- multiple columns reference
             if (preg_match('/^\[.+\]$/', $column) === 1) {
