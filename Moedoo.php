@@ -94,7 +94,7 @@
                 $depth = $illBeBack;
 
                 // this block will be looking for reference in [fk, fk]
-                if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
+                if (array_key_exists('[int]', Config::get('TABLES')[$referenceRule['table']]) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
                   foreach ($rows as $index => $row) {
                     $reverseInclude = [];
 
