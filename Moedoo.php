@@ -47,12 +47,12 @@
                 }
 
                 // setting fk using the map...
-                foreach ($rows as $index => &$row) {
+                foreach ($rows as $index => $row) {
                   foreach ($row[$column] as $i => $value) {
                     if (isset($includeRowsMap[$row[$column][$i]])) {
-                      $row[$column][$i] = $includeRowsMap[$row[$column][$i]];
+                      $rows[$index][$column][$i] = $includeRowsMap[$row[$column][$i]];
                     } else {
-                      $row[$column][$i] = null; // reference no longer exits
+                      $rows[$index][$column][$i] = null; // reference no longer exits
                     }
                   }
                 }
@@ -95,7 +95,7 @@
 
                 // this block will be looking for reference in [fk, fk]
                 if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
-                  foreach ($rows as $index => &$row) {
+                  foreach ($rows as $index => $row) {
                     $reverseInclude = [];
 
                     foreach ($includeRows as $includeIndex => $includeRow) {
@@ -104,12 +104,12 @@
                       }
                     }
 
-                    $row[$REFERENCE_KEY][$column] = $reverseInclude;
+                    $rows[$index][$REFERENCE_KEY][$column] = $reverseInclude;
                   }
                 }
 
                 else if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
-                  foreach ($rows as $index => &$row) {
+                  foreach ($rows as $index => $row) {
                     $reverseInclude = [];
 
                     foreach ($includeRows as $includeIndex => $includeRow) {
@@ -118,7 +118,7 @@
                       }
                     }
 
-                    $row[$REFERENCE_KEY][$column] = $reverseInclude;
+                    $rows[$index][$REFERENCE_KEY][$column] = $reverseInclude;
                   }
                 }
               } catch (Exception $e) {
@@ -157,11 +157,11 @@
                 }
 
                 // setting fk using the map...
-                foreach ($rows as $index => &$row) {
+                foreach ($rows as $index => $row) {
                   if (isset($includeRowsMap[$row[$column]])) {
-                    $row[$column] = $includeRowsMap[$row[$column]];
+                    $rows[$index][$column] = $includeRowsMap[$row[$column]];
                   } else {
-                    $row[$column] = null; // reference no longer exits
+                    $rows[$index][$column] = null; // reference no longer exits
                   }
                 }
               } catch (Exception $e) {
