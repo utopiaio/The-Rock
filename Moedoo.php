@@ -77,7 +77,7 @@
               $INCLUDES = str_replace(', ,', ',', implode(', ', $INCLUDES));
 
               // enforcing fk to be limited to int type
-              if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
+              if (array_key_exists('[int]', Config::get('TABLES')[$referenceRule['table']]) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
                 $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} && ARRAY[$INCLUDES]";
               }
 
