@@ -21,8 +21,8 @@
               $column = trim($column, '[]'); // stripping the flags
 
               $INCLUDES = [];
-              foreach ($rows as $index => &$row) {
-                foreach ($row[$column] as $index => $value) {
+              foreach ($rows as $index => $row) {
+                foreach ($row[$column] as $i => $value) {
                   $INCLUDES[$value] = $value;
                 }
               }
@@ -48,11 +48,11 @@
 
                 // setting fk using the map...
                 foreach ($rows as $index => &$row) {
-                  foreach ($row[$column] as $index => $value) {
-                    if (isset($includeRowsMap[$row[$column][$index]])) {
-                      $row[$column][$index] = $includeRowsMap[$row[$column][$index]];
+                  foreach ($row[$column] as $i => $value) {
+                    if (isset($includeRowsMap[$row[$column][$i]])) {
+                      $row[$column][$i] = $includeRowsMap[$row[$column][$i]];
                     } else {
-                      $row[$column][$index] = null; // reference no longer exits
+                      $row[$column][$i] = null; // reference no longer exits
                     }
                   }
                 }
