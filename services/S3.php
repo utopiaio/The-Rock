@@ -41,17 +41,19 @@
       case 'POST':
         $savedFiles = [];
 
-        foreach ($_FILES as $key => $file) {
-          $mime = Rock::MIMEIsAllowed($file['tmp_name']);
+        foreach ($_FILES as $key => $files) {
+          foreach ($files['name'] as $index => $file) {
+            $mime = Rock::MIMEIsAllowed($files['tmp_name'][$index]);
 
-          if ($mime === false || $file['error'] > 0 || (int)$file['size'] > Config::get('S3_MAX_UPLOAD_SIZE')) {
-            unlink($file['tmp_name']);
-          } else {
-            $name = Util::randomString(Config::get('S3_FILE_NAME_SIZE')) .'.'. substr($file['name'], strrpos($file['name'], '.') + 1);
-            $size = (int)$file['size'];
-            $url = Rock::getUrl() .'/'. Config::get('S3_UPLOAD_URL') .'/'. $name;
-            move_uploaded_file($file['tmp_name'], Config::get('S3_UPLOAD_DIR') .'/'. $name);
-            array_push($savedFiles, Moedoo::insert('s3', ['name' => $name, 'size' => $size, 'url' => $url, 'type' => $mime]));
+            if ($mime === false || $files['error'][$index] > 0 || (int)$files['size'][$index] > Config::get('S3_MAX_UPLOAD_SIZE')) {
+              unlink($files['tmp_name'][$index]);
+            } else {
+              $name = Util::randomString(Config::get('S3_FILE_NAME_SIZE')) .'.'. substr($files['name'][$index], strrpos($files['name'][$index], '.') + 1);
+              $size = (int)$files['size'][$index];
+              $url = Rock::getUrl() .'/'. Config::get('S3_UPLOAD_URL') .'/'. $name;
+              move_uploaded_file($files['tmp_name'][$index], Config::get('S3_UPLOAD_DIR') .'/'. $name);
+              array_push($savedFiles, Moedoo::insert('s3', ['name' => $name, 'size' => $size, 'url' => $url, 'type' => $mime]));
+            }
           }
         }
 
