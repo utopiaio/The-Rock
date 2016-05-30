@@ -23,12 +23,14 @@
               $INCLUDES = [];
               foreach ($rows as $index => $row) {
                 foreach ($row[$column] as $i => $value) {
-                  $INCLUDES[$value] = $value;
+                  if (is_null($value) === false) {
+                    $INCLUDES[$value] = $value;
+                  }
                 }
               }
 
               $columns = Moedoo::buildReturn($referenceRule['table']);
-              $INCLUDES = str_replace(', ,', ',', implode(', ', $INCLUDES));
+              $INCLUDES = implode(', ', $INCLUDES);
               $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES]::integer[])";
 
               try {
@@ -70,11 +72,13 @@
               $INCLUDES = [];
               $REFERENCE_KEY = Config::get('REFERENCE_KEY');
               foreach ($rows as $index => $row) {
-                array_push($INCLUDES, $row[$referenceRule['referenced_by']]);
+                if (is_null($row[$referenceRule['referenced_by']]) === false) {
+                  array_push($INCLUDES, $row[$referenceRule['referenced_by']]);
+                }
               }
 
               $columns = Moedoo::buildReturn($referenceRule['table']);
-              $INCLUDES = str_replace(', ,', ',', implode(', ', $INCLUDES));
+              $INCLUDES = implode(', ', $INCLUDES);
 
               // enforcing fk to be limited to int type
               if (array_key_exists('[int]', Config::get('TABLES')[$referenceRule['table']]) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
@@ -134,11 +138,13 @@
               // associative array [id => id];
               $INCLUDES = [];
               foreach ($rows as $index => $row) {
-                $INCLUDES[$row[$column]] = $row[$column];
+                if (is_null($row[$column]) === false) {
+                  $INCLUDES[$row[$column]] = $row[$column];
+                }
               }
 
               $columns = Moedoo::buildReturn($referenceRule['table']);
-              $INCLUDES = str_replace(', ,', ',', implode(', ', $INCLUDES));
+              $INCLUDES = implode(', ', $INCLUDES);
               $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES]::integer[])";
 
               try {
