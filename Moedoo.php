@@ -29,7 +29,7 @@
 
               $columns = Moedoo::buildReturn($referenceRule['table']);
               $INCLUDES = str_replace(', ,', ',', implode(', ', $INCLUDES));
-              $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES])";
+              $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES]::integer[])";
 
               try {
                 $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
@@ -78,11 +78,11 @@
 
               // enforcing fk to be limited to int type
               if (array_key_exists('[int]', Config::get('TABLES')[$referenceRule['table']]) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
-                $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} && ARRAY[$INCLUDES]";
+                $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} && ARRAY[$INCLUDES]::integer[]";
               }
 
               else if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
-                $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} = ANY(ARRAY[$INCLUDES])";
+                $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} = ANY(ARRAY[$INCLUDES]::integer[])";
               }
 
               try {
@@ -139,7 +139,7 @@
 
               $columns = Moedoo::buildReturn($referenceRule['table']);
               $INCLUDES = str_replace(', ,', ',', implode(', ', $INCLUDES));
-              $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES])";
+              $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES]::integer[])";
 
               try {
                 $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
