@@ -9,11 +9,7 @@
      * @return array
      */
     public static function referenceFk($table, $rows, &$depth = 1) {
-      if ($depth > 0 || $depth === -1) {
-        if ($depth > 0) {
-          $depth--;
-        }
-
+      if (--$depth >= 0) {
         if (array_key_exists('fk', Config::get('TABLES')[$table]) === true) {
           foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
             // [col_name] --- multiple columns reference
@@ -23,7 +19,7 @@
               $INCLUDES = [];
               foreach ($rows as $index => $row) {
                 foreach ($row[$column] as $i => $value) {
-                  if (is_null($value) === false) {
+                  if (is_int($value) === true) {
                     $INCLUDES[$value] = $value;
                   }
                 }
@@ -51,10 +47,12 @@
                 // setting fk using the map...
                 foreach ($rows as $index => $row) {
                   foreach ($row[$column] as $i => $value) {
-                    if (isset($includeRowsMap[$row[$column][$i]])) {
-                      $rows[$index][$column][$i] = $includeRowsMap[$row[$column][$i]];
-                    } else {
-                      $rows[$index][$column][$i] = null; // reference no longer exits
+                    if (is_int($row[$column][$i])) {
+                      if (isset($includeRowsMap[$row[$column][$i]])) {
+                        $rows[$index][$column][$i] = $includeRowsMap[$row[$column][$i]];
+                      } else {
+                        $rows[$index][$column][$i] = null; // reference no longer exits
+                      }
                     }
                   }
                 }
@@ -72,7 +70,7 @@
               $INCLUDES = [];
               $REFERENCE_KEY = Config::get('REFERENCE_KEY');
               foreach ($rows as $index => $row) {
-                if (is_null($row[$referenceRule['referenced_by']]) === false) {
+                if (is_int($row[$referenceRule['referenced_by']]) === false) {
                   array_push($INCLUDES, $row[$referenceRule['referenced_by']]);
                 }
               }
@@ -138,7 +136,7 @@
               // associative array [id => id];
               $INCLUDES = [];
               foreach ($rows as $index => $row) {
-                if (is_null($row[$column]) === false) {
+                if (isset($row[$column]) === true && is_int($row[$column]) === true) {
                   $INCLUDES[$row[$column]] = $row[$column];
                 }
               }
@@ -164,10 +162,12 @@
 
                 // setting fk using the map...
                 foreach ($rows as $index => $row) {
-                  if (isset($includeRowsMap[$row[$column]])) {
-                    $rows[$index][$column] = $includeRowsMap[$row[$column]];
-                  } else {
-                    $rows[$index][$column] = null; // reference no longer exits
+                  if (isset($row[$column]) === true && is_int($row[$column]) === true) {
+                    if (isset($includeRowsMap[$row[$column]]) === true) {
+                      $rows[$index][$column] = $includeRowsMap[$row[$column]];
+                    } else {
+                      $rows[$index][$column] = null; // reference no longer exits
+                    }
                   }
                 }
               } catch (Exception $e) {
@@ -259,7 +259,7 @@
         '[int]' => []
       ];
 
-      if (count($rows) > 0) {
+      if (count($rows) > 0 && isset($rows[0][Config::get('TABLES')[$table]['pk']]) === true) {
         foreach (Config::get('TABLES')[$table]['returning'] as $index => $column) {
           $CAST_FLAG['JSON'][$column] = array_key_exists('JSON', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['JSON']) === true;
           $CAST_FLAG['geometry'][$column] = array_key_exists('geometry', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['geometry']) === true;
@@ -269,41 +269,41 @@
           $CAST_FLAG['bool'][$column] = array_key_exists('bool', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['bool']) === true;
           $CAST_FLAG['[int]'][$column] = array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true;
         }
-      }
 
-      foreach ($rows as $index => &$row) {
-        foreach ($row as $column => &$value) {
-          if ($CAST_FLAG['JSON'][$column] === true) {
-            $value = json_decode($value);
-          }
+        foreach ($rows as $index => &$row) {
+          foreach ($row as $column => &$value) {
+            if ($CAST_FLAG['JSON'][$column] === true) {
+              $value = json_decode($value);
+            }
 
-          else if ($CAST_FLAG['geometry'][$column] === true) {
-            $value = json_decode($value);
-          }
+            else if ($CAST_FLAG['geometry'][$column] === true) {
+              $value = json_decode($value);
+            }
 
-          else if ($CAST_FLAG['int'][$column] === true) {
-            $value = is_numeric($value) === true ? (int)$value : null;
-          }
+            else if ($CAST_FLAG['int'][$column] === true) {
+              $value = is_numeric($value) === true ? (int)$value : null;
+            }
 
-          else if ($CAST_FLAG['float'][$column] === true) {
-            $value = is_numeric($value) === true ? (float)$value : null;
-          }
+            else if ($CAST_FLAG['float'][$column] === true) {
+              $value = is_numeric($value) === true ? (float)$value : null;
+            }
 
-          else if ($CAST_FLAG['double'][$column] === true) {
-            $value = is_numeric($value) === true ? (double)$value : null;
-          }
+            else if ($CAST_FLAG['double'][$column] === true) {
+              $value = is_numeric($value) === true ? (double)$value : null;
+            }
 
-          else if ($CAST_FLAG['bool'][$column] === true) {
-            $value = $value === 't' ? true : false;
-          }
+            else if ($CAST_FLAG['bool'][$column] === true) {
+              $value = $value === 't' ? true : false;
+            }
 
-          // for now (and probably forever) we can only work with 1D arrays
-          // since we'll have PG version 8 we can't use JSON :(
-          else if ($CAST_FLAG['[int]'][$column] === true) {
-            $value = trim($value, '{}');
-            $value = $value === '' ? [] : explode(',', $value);
-            foreach ($value as $index => &$v) {
-              $v = is_numeric($v) === true ? (int)$v : null;
+            // for now (and probably forever) we can only work with 1D arrays
+            // since we'll have PG version 8 we can't use JSON :(
+            else if ($CAST_FLAG['[int]'][$column] === true) {
+              $value = trim($value, '{}');
+              $value = $value === '' ? [] : explode(',', $value);
+              foreach ($value as $index => &$v) {
+                $v = is_numeric($v) === true ? (int)$v : null;
+              }
             }
           }
         }
