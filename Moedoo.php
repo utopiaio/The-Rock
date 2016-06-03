@@ -227,7 +227,7 @@
           $value = json_encode($value);
         }
 
-        if ( (array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true) ||
+        if ((array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true) ||
             (array_key_exists('[float]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[float]']) === true) ||
             (array_key_exists('[double]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[double]']) === true) ) {
           $value = '{'. implode(',', $value) .'}';
