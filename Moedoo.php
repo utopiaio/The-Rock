@@ -9,171 +9,50 @@
      * @return array
      */
     public static function referenceFk($table, $rows, &$depth = 1) {
-      if (--$depth >= 0) {
-        if (array_key_exists('fk', Config::get('TABLES')[$table]) === true) {
-          foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
-            // [col_name] --- multiple columns reference
-            if (preg_match('/^\[.+\]$/', $column) === 1) {
-              $column = trim($column, '[]'); // stripping the flags
+      // fk rules exist for the table
+      if (isset(Config::get('TABLES')[$table]['fk']) === true) {
+        $CACHE_MAP = [];
 
-              $INCLUDES = [];
-              foreach ($rows as $index => $row) {
-                foreach ($row[$column] as $i => $value) {
-                  if (is_int($value) === true) {
-                    $INCLUDES[$value] = $value;
-                  }
-                }
-              }
+        /**
+         * cache builder
+         *
+         * @param String $table
+         * @param String $id
+         * @param Array $CACHE_MAP
+         * @return Array
+         */
+        $CACHE_BUILDER = function($table, $id, &$CACHE_MAP) {
+          if (isset($CACHE_MAP[$table]) === false) {
+            $CACHE_MAP[$table] = [];
 
-              $columns = Moedoo::buildReturn($referenceRule['table']);
-              $INCLUDES = implode(', ', $INCLUDES);
-              $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES]::integer[])";
+            $columns = Moedoo::buildReturn($table);
+            $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$table}";
+            $includeRows = Moedoo::executeQuery($table, $query, []);
+            $includeRows = Moedoo::cast($table, $includeRows);
 
-              try {
-                $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
-                $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
-
-                $illBeBack = $depth;
-                while ($depth > 0) { $includeRows = Moedoo::referenceFk($referenceRule['table'], $includeRows, $depth); }
-                $depth = $illBeBack;
-
-                // building map table...
-                // include row id => include row
-                $includeRowsMap = [];
-                foreach ($includeRows as $index => $includeRow) {
-                  $includeRowsMap[$includeRow[$referenceRule['references']]] = $includeRow;
-                }
-
-                // setting fk using the map...
-                foreach ($rows as $index => $row) {
-                  foreach ($row[$column] as $i => $value) {
-                    if (is_int($row[$column][$i])) {
-                      if (isset($includeRowsMap[$row[$column][$i]])) {
-                        $rows[$index][$column][$i] = $includeRowsMap[$row[$column][$i]];
-                      } else {
-                        $rows[$index][$column][$i] = null; // reference no longer exits
-                      }
-                    }
-                  }
-                }
-              } catch (Exception $e) {
-                throw new Exception($e->getMessage(), 1);
-              }
+            foreach ($includeRows as $index => $includeRow) {
+              $CACHE_MAP[$table][$includeRow[$id]] = $includeRow;
             }
+          }
 
-            /**
-             * {col_name} --- reverse reference™️
-             */
-            else if (preg_match('/^\{.+\}$/', $column) === 1) {
-              $column = trim($column, '{}');
+          return $CACHE_MAP;
+        };
 
-              $INCLUDES = [];
-              $REFERENCE_KEY = Config::get('REFERENCE_KEY');
-              foreach ($rows as $index => $row) {
-                if (is_int($row[$referenceRule['referenced_by']]) === false) {
-                  array_push($INCLUDES, $row[$referenceRule['referenced_by']]);
-                }
-              }
+        foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
+          // [column] --- array reference
+          if (preg_match('/^\[.+\]$/', $column) === 1) {
+            $CACHE_BUILDER($referenceRule['table'], $referenceRule['references'], $CACHE_MAP);
+          }
 
-              $columns = Moedoo::buildReturn($referenceRule['table']);
-              $INCLUDES = implode(', ', $INCLUDES);
+          // {reverse_reference} --- reverse reference
+          // reverse reference only works for pk else the cost will be too high
+          else if (preg_match('/^\{.+\}$/', $column) === 1) {
+            $CACHE_BUILDER($referenceRule['table'], Config::get('TABLES')[$referenceRule['table']]['pk'], $CACHE_MAP);
+          }
 
-              // enforcing fk to be limited to int type
-              if (array_key_exists('[int]', Config::get('TABLES')[$referenceRule['table']]) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
-                $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} && ARRAY[$INCLUDES]::integer[]";
-              }
-
-              else if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
-                $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['referencing_column']} = ANY(ARRAY[$INCLUDES]::integer[])";
-              }
-
-              try {
-                $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
-                $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
-
-                $illBeBack = $depth;
-                while ($depth > 0) { $includeRows = Moedoo::referenceFk($referenceRule['table'], $includeRows, $depth); }
-                $depth = $illBeBack;
-
-                // this block will be looking for reference in [fk, fk]
-                if (array_key_exists('[int]', Config::get('TABLES')[$referenceRule['table']]) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
-                  foreach ($rows as $index => $row) {
-                    $reverseInclude = [];
-
-                    foreach ($includeRows as $includeIndex => $includeRow) {
-                      if (in_array($row[$referenceRule['referenced_by']], $includeRow[$referenceRule['referencing_column']])) {
-                        array_push($reverseInclude, $includeRow);
-                      }
-                    }
-
-                    $rows[$index][$REFERENCE_KEY][$column] = $reverseInclude;
-                  }
-                }
-
-                else if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
-                  foreach ($rows as $index => $row) {
-                    $reverseInclude = [];
-
-                    foreach ($includeRows as $includeIndex => $includeRow) {
-                      if ($includeRow[$referenceRule['referencing_column']] === $row[$referenceRule['referenced_by']]) {
-                        array_push($reverseInclude, $includeRow);
-                      }
-                    }
-
-                    $rows[$index][$REFERENCE_KEY][$column] = $reverseInclude;
-                  }
-                }
-              } catch (Exception $e) {
-                throw new Exception($e->getMessage(), 1);
-              }
-            }
-
-            /**
-             * col_name --- single foreign key reference
-             */
-            else {
-              // building hash map of unique fk id (better performance than `array_unique`)
-              // associative array [id => id];
-              $INCLUDES = [];
-              foreach ($rows as $index => $row) {
-                if (isset($row[$column]) === true && is_int($row[$column]) === true) {
-                  $INCLUDES[$row[$column]] = $row[$column];
-                }
-              }
-
-              $columns = Moedoo::buildReturn($referenceRule['table']);
-              $INCLUDES = implode(', ', $INCLUDES);
-              $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$referenceRule['table']} WHERE {$referenceRule['references']} = ANY(ARRAY[$INCLUDES]::integer[])";
-
-              try {
-                $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
-                $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
-
-                $illBeBack = $depth;
-                while ($depth > 0) { $includeRows = Moedoo::referenceFk($referenceRule['table'], $includeRows, $depth); }
-                $depth = $illBeBack;
-
-                // building map table...
-                // include row id => include row
-                $includeRowsMap = [];
-                foreach ($includeRows as $index => $includeRow) {
-                  $includeRowsMap[$includeRow[$referenceRule['references']]] = $includeRow;
-                }
-
-                // setting fk using the map...
-                foreach ($rows as $index => $row) {
-                  if (isset($row[$column]) === true && is_int($row[$column]) === true) {
-                    if (isset($includeRowsMap[$row[$column]]) === true) {
-                      $rows[$index][$column] = $includeRowsMap[$row[$column]];
-                    } else {
-                      $rows[$index][$column] = null; // reference no longer exits
-                    }
-                  }
-                }
-              } catch (Exception $e) {
-                throw new Exception($e->getMessage(), 1);
-              }
-            }
+          // column
+          else {
+            $CACHE_BUILDER($referenceRule['table'], $referenceRule['references'], $CACHE_MAP);
           }
         }
       }
