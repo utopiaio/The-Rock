@@ -38,22 +38,87 @@
           return $CACHE_MAP;
         };
 
-        foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
-          // [column] --- array reference
-          if (preg_match('/^\[.+\]$/', $column) === 1) {
-            $CACHE_BUILDER($referenceRule['table'], $referenceRule['references'], $CACHE_MAP);
+        if ($depth > 0) {
+          // building map for FK -------------------------------------------------------------------
+          // we're going to be building the "depth-tree" for each rule independently
+          $MAP_FK = [];
+          $d = 1;
+          $t = $table;
+
+          while ($d <= $depth) {
+            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
+              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
+                if (preg_match('/^[a-z]+/', $column) === 1) {
+                  $MAP_FK[$referenceRule['table']] = $referenceRule['references'];
+                  $t = $referenceRule['table'];
+                }
+              }
+            }
+
+            $d++;
           }
 
-          // {reverse_reference} --- reverse reference
-          // reverse reference only works for pk else the cost will be too high
-          else if (preg_match('/^\{.+\}$/', $column) === 1) {
-            $CACHE_BUILDER($referenceRule['table'], Config::get('TABLES')[$referenceRule['table']]['pk'], $CACHE_MAP);
+          foreach ($MAP_FK as $t => $id) {
+            $CACHE_BUILDER($t, $id, $CACHE_MAP);
+          }
+          // ./ building map for FK ----------------------------------------------------------------
+
+          // building map for FK[] -----------------------------------------------------------------
+          $MAP_FK_M = [];
+          $d = 1;
+          $t = $table;
+          while ($d <= $depth) {
+            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
+              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
+                if (preg_match('/^\[.+\]$/', $column) === 1) {
+                  $MAP_FK_M[$referenceRule['table']] = $referenceRule['references'];
+                  $t = $referenceRule['table'];
+                }
+              }
+            }
+
+            $d++;
           }
 
-          // column
-          else {
-            $CACHE_BUILDER($referenceRule['table'], $referenceRule['references'], $CACHE_MAP);
+          foreach ($MAP_FK_M as $t => $id) {
+            $CACHE_BUILDER($t, $id, $CACHE_MAP);
           }
+          // ./ building map for FK[] --------------------------------------------------------------
+
+          // building map for FK{} -----------------------------------------------------------------
+          $MAP_FK_R = [];
+          $d = 1;
+          $t = $table;
+          while ($d <= $depth) {
+            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
+              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
+                if (preg_match('/^\{.+\}$/', $column) === 1) {
+                  $MAP_FK_R[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
+                  $t = $referenceRule['table'];
+                }
+              }
+            }
+
+            $d++;
+          }
+
+          foreach ($MAP_FK_R as $t => $id) {
+            $CACHE_BUILDER($t, $id, $CACHE_MAP);
+          }
+          // ./ building map for FK{} --------------------------------------------------------------
+
+          // mapping row to fk ---------------------------------------------------------------------
+          $t = $table;
+          foreach ($rows as $i => &$row) {
+            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
+              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
+                if (preg_match('/^[a-z]+/', $column) === 1) {
+                  $row[$column] = $CACHE_MAP[$referenceRule['table']][$row[$column]];
+                }
+              }
+            }
+          }
+          // ./ mapping row to fk ------------------------------------------------------------------
         }
       }
 
