@@ -1,6 +1,92 @@
 <?php
   class Moedoo {
     /**
+     * cache builder
+     *
+     * @param String $table
+     * @param String $id
+     * @param Array $CACHE_MAP
+     * @return Array
+     */
+    public static function CACHE_BUILDER($table, $id, &$CACHE_MAP) {
+      if (isset($CACHE_MAP[$table]) === false) {
+        $CACHE_MAP[$table] = [];
+
+        $columns = Moedoo::buildReturn($table);
+        $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$table}";
+        $includeRows = Moedoo::executeQuery($table, $query, []);
+        $includeRows = Moedoo::cast($table, $includeRows);
+
+        foreach ($includeRows as $index => $includeRow) {
+          $CACHE_MAP[$table][$includeRow[$id]] = $includeRow;
+        }
+      }
+
+      return $CACHE_MAP;
+    }
+
+    /**
+     * builds fk iterating over CACHE_MAP
+     * @param String $tFK
+     * @param Array $rFK
+     * @param Integer &$dFK
+     * @param Array $CACHE_MAP
+     * @return Array
+     */
+    public static function FK($tFK, $rFK, &$dFK, $CACHE_MAP) {
+      if (--$dFK >= 0) {
+        if (isset(Config::get('TABLES')[$tFK]['fk']) === true) {
+          foreach (Config::get('TABLES')[$tFK]['fk'] as $column => $referenceRule) {
+            if (preg_match('/^\[.+\]$/', $column) === 1) {
+              $column = trim($column, '[]');
+              $fkMapped = [];
+              foreach ($rFK[$column] as $j => $fkId) {
+                if (isset($CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
+                  $d = $dFK - 1;
+                  array_push($fkMapped, Moedoo::FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$fkId], $d, $CACHE_MAP));
+                }
+              }
+
+              $rFK[$column] = $fkMapped;
+            }
+
+            else if (preg_match('/^[a-z]+/', $column) === 1 && isset($CACHE_MAP[$referenceRule['table']][$rFK[$column]]) === true) {
+              $d = $dFK;
+              $rFK[$column] = Moedoo::FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$rFK[$column]], $d, $CACHE_MAP);
+            }
+
+            else if (preg_match('/^\{.+\}$/', $column) === 1) {
+              $column = trim($column, '{}');
+              $rFK[Config::get('REFERENCE_KEY')][$column] = [];
+
+              // reverse fk []
+              if (isset(Config::get('TABLES')[$referenceRule['table']]['[int]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
+                foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                  if (in_array($rFK[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
+                    $d = $dFK - 1;
+                    array_push($rFK[Config::get('REFERENCE_KEY')][$column], Moedoo::FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
+                  }
+                }
+              }
+
+              // single reverse fk
+              else if (isset(Config::get('TABLES')[$referenceRule['table']]['int']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
+                foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                  if ($rRow[$referenceRule['referencing_column']] === $rFK[$referenceRule['referenced_by']]) {
+                    $d = $dFK - 1;
+                    array_push($rFK[Config::get('REFERENCE_KEY')][$column], Moedoo::FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return $rFK;
+    }
+
+    /**
      * returns a FK reference
      *
      * @param string $table
@@ -12,92 +98,6 @@
       // fk rules exist for the table
       if (isset(Config::get('TABLES')[$table]['fk']) === true) {
         $CACHE_MAP = [];
-
-        /**
-         * cache builder
-         *
-         * @param String $table
-         * @param String $id
-         * @param Array $CACHE_MAP
-         * @return Array
-         */
-        function CACHE_BUILDER($table, $id, &$CACHE_MAP) {
-          if (isset($CACHE_MAP[$table]) === false) {
-            $CACHE_MAP[$table] = [];
-
-            $columns = Moedoo::buildReturn($table);
-            $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$table}";
-            $includeRows = Moedoo::executeQuery($table, $query, []);
-            $includeRows = Moedoo::cast($table, $includeRows);
-
-            foreach ($includeRows as $index => $includeRow) {
-              $CACHE_MAP[$table][$includeRow[$id]] = $includeRow;
-            }
-          }
-
-          return $CACHE_MAP;
-        };
-
-        /**
-         * builds fk iterating over CACHE_MAP
-         * @param String $tFK
-         * @param Array $rFK
-         * @param Integer &$dFK
-         * @param Array $CACHE_MAP
-         * @return Array
-         */
-        function FK($tFK, $rFK, &$dFK, $CACHE_MAP) {
-          if (--$dFK >= 0) {
-            if (isset(Config::get('TABLES')[$tFK]['fk']) === true) {
-              foreach (Config::get('TABLES')[$tFK]['fk'] as $column => $referenceRule) {
-                if (preg_match('/^\[.+\]$/', $column) === 1) {
-                  $column = trim($column, '[]');
-                  $fkMapped = [];
-                  foreach ($rFK[$column] as $j => $fkId) {
-                    if (isset($CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
-                      $d = $dFK - 1;
-                      array_push($fkMapped, FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$fkId], $d, $CACHE_MAP));
-                    }
-                  }
-
-                  $rFK[$column] = $fkMapped;
-                }
-
-                else if (preg_match('/^[a-z]+/', $column) === 1 && isset($CACHE_MAP[$referenceRule['table']][$rFK[$column]]) === true) {
-                  $d = $dFK;
-                  $rFK[$column] = FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$rFK[$column]], $d, $CACHE_MAP);
-                }
-
-                else if (preg_match('/^\{.+\}$/', $column) === 1) {
-                  $column = trim($column, '{}');
-                  $rFK[Config::get('REFERENCE_KEY')][$column] = [];
-
-                  // reverse fk []
-                  if (isset(Config::get('TABLES')[$referenceRule['table']]['[int]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
-                    foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
-                      if (in_array($rFK[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
-                        $d = $dFK - 1;
-                        array_push($rFK[Config::get('REFERENCE_KEY')][$column], FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
-                      }
-                    }
-                  }
-
-                  // single reverse fk
-                  else if (isset(Config::get('TABLES')[$referenceRule['table']]['int']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
-                    foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
-                      if ($rRow[$referenceRule['referencing_column']] === $rFK[$referenceRule['referenced_by']]) {
-                        $d = $dFK - 1;
-                        array_push($rFK[Config::get('REFERENCE_KEY')][$column], FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-
-          return $rFK;
-        };
 
         if ($depth > 0) {
           // building map for FK -------------------------------------------------------------------
@@ -168,7 +168,7 @@
 
           // passing to cache builder --------------------------------------------------------------
           foreach ($MAPPER as $t => $id) {
-            CACHE_BUILDER($t, $id, $CACHE_MAP);
+            Moedoo::CACHE_BUILDER($t, $id, $CACHE_MAP);
           }
           // ./ passing to cache builder -----------------------------------------------------------
 
@@ -180,7 +180,7 @@
                   // we need to *preserve* depth so other
                   // FK rules get a change to do their thing with depth
                   $d = $depth - 1;
-                  $row[$column] = FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$row[$column]], $d, $CACHE_MAP);
+                  $row[$column] = Moedoo::FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$row[$column]], $d, $CACHE_MAP);
                 }
 
                 else if (preg_match('/^\[.+\]$/', $column) === 1) {
@@ -189,7 +189,7 @@
                   foreach ($row[$column] as $j => $fkId) {
                     if (isset($CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
                       $d = $depth - 1;
-                      array_push($fkMapped, FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$fkId], $d, $CACHE_MAP));
+                      array_push($fkMapped, Moedoo::FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$fkId], $d, $CACHE_MAP));
                     }
                   }
 
@@ -205,7 +205,7 @@
                     foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
                       if (in_array($row[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
                         $d = $depth - 1;
-                        array_push($row[Config::get('REFERENCE_KEY')][$column], FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
+                        array_push($row[Config::get('REFERENCE_KEY')][$column], Moedoo::FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
                       }
                     }
                   }
@@ -215,7 +215,7 @@
                     foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
                       if ($rRow[$referenceRule['referencing_column']] === $row[$referenceRule['referenced_by']]) {
                         $d = $depth - 1;
-                        array_push($row[Config::get('REFERENCE_KEY')][$column], FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
+                        array_push($row[Config::get('REFERENCE_KEY')][$column], Moedoo::FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
                       }
                     }
                   }
