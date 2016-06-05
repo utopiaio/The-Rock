@@ -179,7 +179,7 @@
                   $row[Config::get('REFERENCE_KEY')][$column] = [];
 
                   // reverse fk []
-                  if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
+                  if (isset(Config::get('TABLES')[$referenceRule['table']]['[int]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
                     foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
                       if (in_array($row[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
                         $d = $depth - 1;
@@ -189,7 +189,7 @@
                   }
 
                   // single reverse fk
-                  else if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
+                  else if (isset(Config::get('TABLES')[$referenceRule['table']]['int']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
                     foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
                       if ($rRow[$referenceRule['referencing_column']] === $row[$referenceRule['referenced_by']]) {
                         $d = $depth - 1;
