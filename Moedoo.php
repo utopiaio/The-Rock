@@ -111,13 +111,12 @@
               foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^[a-z]+/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+                  $t = $referenceRule['table'];
                 } else if (preg_match('/^\[.+\]$/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = $referenceRule['references'];
                 } else if (preg_match('/^\{.+\}$/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
                 }
-
-                $t = $referenceRule['table'];
               }
             }
 
@@ -133,13 +132,12 @@
               foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^\[.+\]$/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+                  $t = $referenceRule['table'];
                 } else if (preg_match('/^[a-z]+/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = $referenceRule['references'];
                 } else if (preg_match('/^\{.+\}$/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
                 }
-
-                $t = $referenceRule['table'];
               }
             }
 
@@ -155,13 +153,12 @@
               foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^\{.+\}$/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
+                  $t = $referenceRule['table'];
                 } else if (preg_match('/^[a-z]+/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = $referenceRule['references'];
                 } else if (preg_match('/^\[.+\]$/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = $referenceRule['references'];
                 }
-
-                $t = $referenceRule['table'];
               }
             }
 
