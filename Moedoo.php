@@ -50,8 +50,22 @@
           if (--$dFK >= 0) {
             if (isset(Config::get('TABLES')[$tFK]['fk']) === true) {
               foreach (Config::get('TABLES')[$tFK]['fk'] as $column => $referenceRule) {
-                if (preg_match('/^[a-z]+/', $column) === 1 && isset($CACHE_MAP[$referenceRule['table']][$rFK[$column]]) === true) {
-                  $rFK[$column] = FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$rFK[$column]], $dFK, $CACHE_MAP);
+                if (preg_match('/^\[.+\]$/', $column) === 1) {
+                  $column = trim($column, '[]');
+                  $fkMapped = [];
+                  foreach ($rFK[$column] as $j => $fkId) {
+                    if (isset($CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
+                      $d = $dFK - 1;
+                      array_push($fkMapped, FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$fkId], $d, $CACHE_MAP));
+                    }
+                  }
+
+                  $rFK[$column] = $fkMapped;
+                }
+
+                else if (preg_match('/^[a-z]+/', $column) === 1 && isset($CACHE_MAP[$referenceRule['table']][$rFK[$column]]) === true) {
+                  $d = $dFK;
+                  $rFK[$column] = FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$rFK[$column]], $d, $CACHE_MAP);
                 }
               }
             }
@@ -129,19 +143,33 @@
           }
           // ./ building map for FK{} --------------------------------------------------------------
 
-          // mapping row to fk ---------------------------------------------------------------------
-          $t = $table;
+          // mapping -------------------------------------------------------------------------------
           foreach ($rows as $i => &$row) {
-            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
-              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
+            if (isset(Config::get('TABLES')[$table]['fk']) === true) {
+              foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^[a-z]+/', $column) === 1 && isset($CACHE_MAP[$referenceRule['table']][$row[$column]]) === true) {
+                  // we need to *preserve* depth so other
+                  // FK rules get a change to do their thing with depth
                   $d = $depth - 1;
                   $row[$column] = FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$row[$column]], $d, $CACHE_MAP);
+                }
+
+                else if (preg_match('/^\[.+\]$/', $column) === 1) {
+                  $column = trim($column, '[]');
+                  $fkMapped = [];
+                  foreach ($row[$column] as $j => $fkId) {
+                    if (isset($CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
+                      $d = $depth - 1;
+                      array_push($fkMapped, FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$fkId], $d, $CACHE_MAP));
+                    }
+                  }
+
+                  $row[$column] = $fkMapped;
                 }
               }
             }
           }
-          // ./ mapping row to fk ------------------------------------------------------------------
+          // ./ mapping ----------------------------------------------------------------------------
         }
       }
 
