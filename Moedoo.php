@@ -21,7 +21,7 @@
          * @param Array $CACHE_MAP
          * @return Array
          */
-        $CACHE_BUILDER = function($table, $id, &$CACHE_MAP) {
+        function CACHE_BUILDER($table, $id, &$CACHE_MAP) {
           if (isset($CACHE_MAP[$table]) === false) {
             $CACHE_MAP[$table] = [];
 
@@ -36,6 +36,28 @@
           }
 
           return $CACHE_MAP;
+        };
+
+        /**
+         * builds fk iterating over CACHE_MAP
+         * @param String $tFK
+         * @param Array $rFK
+         * @param Integer &$dFK
+         * @param Array $CACHE_MAP
+         * @return Array
+         */
+        function FK($tFK, $rFK, &$dFK, $CACHE_MAP) {
+          if (--$dFK >= 0) {
+            if (isset(Config::get('TABLES')[$tFK]['fk']) === true) {
+              foreach (Config::get('TABLES')[$tFK]['fk'] as $column => $referenceRule) {
+                if (preg_match('/^[a-z]+/', $column) === 1 && isset($CACHE_MAP[$referenceRule['table']][$rFK[$column]]) === true) {
+                  $rFK[$column] = FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$rFK[$column]], $dFK, $CACHE_MAP);
+                }
+              }
+            }
+          }
+
+          return $rFK;
         };
 
         if ($depth > 0) {
@@ -59,7 +81,7 @@
           }
 
           foreach ($MAP_FK as $t => $id) {
-            $CACHE_BUILDER($t, $id, $CACHE_MAP);
+            CACHE_BUILDER($t, $id, $CACHE_MAP);
           }
           // ./ building map for FK ----------------------------------------------------------------
 
@@ -81,7 +103,7 @@
           }
 
           foreach ($MAP_FK_M as $t => $id) {
-            $CACHE_BUILDER($t, $id, $CACHE_MAP);
+            CACHE_BUILDER($t, $id, $CACHE_MAP);
           }
           // ./ building map for FK[] --------------------------------------------------------------
 
@@ -103,7 +125,7 @@
           }
 
           foreach ($MAP_FK_R as $t => $id) {
-            $CACHE_BUILDER($t, $id, $CACHE_MAP);
+            CACHE_BUILDER($t, $id, $CACHE_MAP);
           }
           // ./ building map for FK{} --------------------------------------------------------------
 
@@ -112,8 +134,9 @@
           foreach ($rows as $i => &$row) {
             if (isset(Config::get('TABLES')[$t]['fk']) === true) {
               foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
-                if (preg_match('/^[a-z]+/', $column) === 1) {
-                  $row[$column] = $CACHE_MAP[$referenceRule['table']][$row[$column]];
+                if (preg_match('/^[a-z]+/', $column) === 1 && isset($CACHE_MAP[$referenceRule['table']][$row[$column]]) === true) {
+                  $d = $depth - 1;
+                  $row[$column] = FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$row[$column]], $d, $CACHE_MAP);
                 }
               }
             }
