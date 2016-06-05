@@ -67,6 +67,31 @@
                   $d = $dFK;
                   $rFK[$column] = FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$rFK[$column]], $d, $CACHE_MAP);
                 }
+
+                else if (preg_match('/^\{.+\}$/', $column) === 1) {
+                  $column = trim($column, '{}');
+                  $rFK[Config::get('REFERENCE_KEY')][$column] = [];
+
+                  // reverse fk []
+                  if (isset(Config::get('TABLES')[$referenceRule['table']]['[int]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
+                    foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                      if (in_array($rFK[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
+                        $d = $dFK - 1;
+                        array_push($rFK[Config::get('REFERENCE_KEY')][$column], FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
+                      }
+                    }
+                  }
+
+                  // single reverse fk
+                  else if (isset(Config::get('TABLES')[$referenceRule['table']]['int']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
+                    foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                      if ($rRow[$referenceRule['referencing_column']] === $rFK[$referenceRule['referenced_by']]) {
+                        $d = $dFK - 1;
+                        array_push($rFK[Config::get('REFERENCE_KEY')][$column], FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
+                      }
+                    }
+                  }
+                }
               }
             }
           }
