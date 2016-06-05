@@ -77,71 +77,78 @@
         if ($depth > 0) {
           // building map for FK -------------------------------------------------------------------
           // we're going to be building the "depth-tree" for each rule independently
-          $MAP_FK = [];
+          $MAPPER = [];
+
           $d = 1;
           $t = $table;
-
           while ($d <= $depth) {
             if (isset(Config::get('TABLES')[$t]['fk']) === true) {
               foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^[a-z]+/', $column) === 1) {
-                  $MAP_FK[$referenceRule['table']] = $referenceRule['references'];
-                  $t = $referenceRule['table'];
+                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+                } else if (preg_match('/^\[.+\]$/', $column) === 1) {
+                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+                } else if (preg_match('/^\{.+\}$/', $column) === 1) {
+                  $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
                 }
+
+                $t = $referenceRule['table'];
               }
             }
 
             $d++;
           }
-
-          foreach ($MAP_FK as $t => $id) {
-            CACHE_BUILDER($t, $id, $CACHE_MAP);
-          }
           // ./ building map for FK ----------------------------------------------------------------
 
           // building map for FK[] -----------------------------------------------------------------
-          $MAP_FK_M = [];
           $d = 1;
           $t = $table;
           while ($d <= $depth) {
             if (isset(Config::get('TABLES')[$t]['fk']) === true) {
               foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^\[.+\]$/', $column) === 1) {
-                  $MAP_FK_M[$referenceRule['table']] = $referenceRule['references'];
-                  $t = $referenceRule['table'];
+                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+                } else if (preg_match('/^[a-z]+/', $column) === 1) {
+                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+                } else if (preg_match('/^\{.+\}$/', $column) === 1) {
+                  $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
                 }
+
+                $t = $referenceRule['table'];
               }
             }
 
             $d++;
           }
-
-          foreach ($MAP_FK_M as $t => $id) {
-            CACHE_BUILDER($t, $id, $CACHE_MAP);
-          }
           // ./ building map for FK[] --------------------------------------------------------------
 
           // building map for FK{} -----------------------------------------------------------------
-          $MAP_FK_R = [];
           $d = 1;
           $t = $table;
           while ($d <= $depth) {
             if (isset(Config::get('TABLES')[$t]['fk']) === true) {
               foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^\{.+\}$/', $column) === 1) {
-                  $MAP_FK_R[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
-                  $t = $referenceRule['table'];
+                  $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
+                } else if (preg_match('/^[a-z]+/', $column) === 1) {
+                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+                } else if (preg_match('/^\[.+\]$/', $column) === 1) {
+                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
                 }
+
+                $t = $referenceRule['table'];
               }
             }
 
             $d++;
           }
+          // ./ building map for FK{} --------------------------------------------------------------
 
-          foreach ($MAP_FK_R as $t => $id) {
+          // passing to cache builder --------------------------------------------------------------
+          foreach ($MAPPER as $t => $id) {
             CACHE_BUILDER($t, $id, $CACHE_MAP);
           }
-          // ./ building map for FK{} --------------------------------------------------------------
+          // ./ passing to cache builder -----------------------------------------------------------
 
           // mapping -------------------------------------------------------------------------------
           foreach ($rows as $i => &$row) {
@@ -165,6 +172,31 @@
                   }
 
                   $row[$column] = $fkMapped;
+                }
+
+                else if(preg_match('/^\{.+\}$/', $column) === 1) {
+                  $column = trim($column, '{}');
+                  $row[Config::get('REFERENCE_KEY')][$column] = [];
+
+                  // reverse fk []
+                  if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
+                    foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                      if (in_array($row[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
+                        $d = $depth - 1;
+                        array_push($row[Config::get('REFERENCE_KEY')][$column], FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
+                      }
+                    }
+                  }
+
+                  // single reverse fk
+                  else if (in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
+                    foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                      if ($rRow[$referenceRule['referencing_column']] === $row[$referenceRule['referenced_by']]) {
+                        $d = $depth - 1;
+                        array_push($row[Config::get('REFERENCE_KEY')][$column], FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
+                      }
+                    }
+                  }
                 }
               }
             }
