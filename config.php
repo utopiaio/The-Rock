@@ -3,7 +3,7 @@
    * The Rock - a micro "framework" built on top of FastRoute (more like with)
    *
    * @author    Moe Szyslak <moe.duffdude@gmail.com>
-   * @version   0.6.0
+   * @version   0.6.1
    * @package   Deez Nuts
    */
 
