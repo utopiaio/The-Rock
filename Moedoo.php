@@ -28,6 +28,27 @@
     }
 
     /**
+     * builds MAPPER using fk rules defined on the table passed
+     *
+     * @param String $table
+     * @param Array  &$MAPPER
+     * @return array
+     */
+    public static function MAP_BUILDER($table, &$MAPPER = []) {
+      if (isset(Config::get('TABLES')[$table]['fk']) === true) {
+        foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
+          if (preg_match('/^\[.+\]$/', $column) === 1 || preg_match('/^[a-z]+/', $column) === 1) {
+            $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+          } else if (preg_match('/^\{.+\}$/', $column) === 1) {
+            $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
+          }
+        }
+      }
+
+      return $MAPPER;
+    }
+
+    /**
      * builds fk iterating over CACHE_MAP
      * @param String $tFK
      * @param Array $rFK
@@ -110,7 +131,7 @@
             if (isset(Config::get('TABLES')[$t]['fk']) === true) {
               foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^[a-z]+/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+                  Moedoo::MAP_BUILDER($referenceRule['table'], $MAPPER);
                   $t = $referenceRule['table'];
                 } else if (preg_match('/^\[.+\]$/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = $referenceRule['references'];
@@ -131,7 +152,7 @@
             if (isset(Config::get('TABLES')[$t]['fk']) === true) {
               foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^\[.+\]$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+                  Moedoo::MAP_BUILDER($referenceRule['table'], $MAPPER);
                   $t = $referenceRule['table'];
                 } else if (preg_match('/^[a-z]+/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = $referenceRule['references'];
@@ -152,7 +173,7 @@
             if (isset(Config::get('TABLES')[$t]['fk']) === true) {
               foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^\{.+\}$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
+                  Moedoo::MAP_BUILDER($referenceRule['table'], $MAPPER);
                   $t = $referenceRule['table'];
                 } else if (preg_match('/^[a-z]+/', $column) === 1) {
                   $MAPPER[$referenceRule['table']] = $referenceRule['references'];
