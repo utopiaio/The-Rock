@@ -28,19 +28,25 @@
     }
 
     /**
-     * builds MAPPER using fk rules defined on the table passed
+     * MAPPER - recursive builder for `CACHE_BUILDER`
      *
      * @param String $table
-     * @param Array  &$MAPPER
-     * @return array
+     * @param Integer &$depth
+     * @param Array &$MAPPER
      */
-    public static function MAP_BUILDER($table, &$MAPPER = []) {
-      if (isset(Config::get('TABLES')[$table]['fk']) === true) {
+    public static function MAPPER($table, &$depth, &$MAPPER) {
+      if ($depth-- > 0 && isset(Config::get('TABLES')[$table]['fk']) === true) {
         foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
           if (preg_match('/^\[.+\]$/', $column) === 1 || preg_match('/^[a-z]+/', $column) === 1) {
             $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+            $illBeBack = $depth;
+            Moedoo::MAPPER($referenceRule['table'], $depth, $MAPPER);
+            $depth = $illBeBack; // this makes sure every rules gets the same depth on a go
           } else if (preg_match('/^\{.+\}$/', $column) === 1) {
             $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
+            $illBeBack = $depth;
+            Moedoo::MAPPER($referenceRule['table'], $depth, $MAPPER);
+            $depth = $illBeBack;
           }
         }
       }
@@ -50,6 +56,7 @@
 
     /**
      * builds fk iterating over CACHE_MAP
+     *
      * @param String $tFK
      * @param Array $rFK
      * @param Integer &$dFK
@@ -57,7 +64,7 @@
      * @return Array
      */
     public static function FK($tFK, $rFK, &$dFK, $CACHE_MAP) {
-      if (--$dFK >= 0) {
+      if ($dFK-- >= 0) {
         if (isset(Config::get('TABLES')[$tFK]['fk']) === true) {
           foreach (Config::get('TABLES')[$tFK]['fk'] as $column => $referenceRule) {
             if (preg_match('/^\[.+\]$/', $column) === 1) {
@@ -121,71 +128,8 @@
       // fk rules exist for the table
       if (isset(Config::get('TABLES')[$table]['fk']) === true) {
         if ($depth > 0) {
-          // building map for FK -------------------------------------------------------------------
-          // we're going to be building the "depth-tree" for each rule independently
           $MAPPER = [];
-
-          $d = 1;
-          $t = $table;
-          while ($d <= $depth) {
-            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
-              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
-                if (preg_match('/^[a-z]+/', $column) === 1) {
-                  Moedoo::MAP_BUILDER($referenceRule['table'], $MAPPER);
-                  $t = $referenceRule['table'];
-                } else if (preg_match('/^\[.+\]$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-                } else if (preg_match('/^\{.+\}$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
-                }
-              }
-            }
-
-            $d++;
-          }
-          // ./ building map for FK ----------------------------------------------------------------
-
-          // building map for FK[] -----------------------------------------------------------------
-          $d = 1;
-          $t = $table;
-          while ($d <= $depth) {
-            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
-              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
-                if (preg_match('/^\[.+\]$/', $column) === 1) {
-                  Moedoo::MAP_BUILDER($referenceRule['table'], $MAPPER);
-                  $t = $referenceRule['table'];
-                } else if (preg_match('/^[a-z]+/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-                } else if (preg_match('/^\{.+\}$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
-                }
-              }
-            }
-
-            $d++;
-          }
-          // ./ building map for FK[] --------------------------------------------------------------
-
-          // building map for FK{} -----------------------------------------------------------------
-          $d = 1;
-          $t = $table;
-          while ($d <= $depth) {
-            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
-              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
-                if (preg_match('/^\{.+\}$/', $column) === 1) {
-                  Moedoo::MAP_BUILDER($referenceRule['table'], $MAPPER);
-                  $t = $referenceRule['table'];
-                } else if (preg_match('/^[a-z]+/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-                } else if (preg_match('/^\[.+\]$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-                }
-              }
-            }
-
-            $d++;
-          }
-          // ./ building map for FK{} --------------------------------------------------------------
+          Moedoo::MAPPER($table, $depth, $MAPPER);
 
           // passing to cache builder --------------------------------------------------------------
           foreach ($MAPPER as $t => $id) {
