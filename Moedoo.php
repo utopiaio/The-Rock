@@ -1,5 +1,10 @@
 <?php
   class Moedoo {
+    // this will hold all the table names that will be be cached for depth references
+    private static $MAPPER = [];
+    // this will hold table rows with ['tableName' => ['id' => 'row']] structure
+    // this will sacrifice the memory in-order to gain much needed performance boost
+    // on larger depth requests (especially with queries)
     private static $CACHE_MAP = [];
 
     /**
@@ -70,6 +75,7 @@
             if (preg_match('/^\[.+\]$/', $column) === 1) {
               $column = trim($column, '[]');
               $fkMapped = [];
+
               foreach ($rFK[$column] as $j => $fkId) {
                 if (isset($CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
                   $d = $dFK - 1;
@@ -128,11 +134,10 @@
       // fk rules exist for the table
       if (isset(Config::get('TABLES')[$table]['fk']) === true) {
         if ($depth > 0) {
-          $MAPPER = [];
-          Moedoo::MAPPER($table, $depth, $MAPPER);
+          Moedoo::MAPPER($table, $depth, Moedoo::$MAPPER);
 
           // passing to cache builder --------------------------------------------------------------
-          foreach ($MAPPER as $t => $id) {
+          foreach (Moedoo::$MAPPER as $t => $id) {
             Moedoo::CACHE_BUILDER($t, $id, Moedoo::$CACHE_MAP);
           }
           // ./ passing to cache builder -----------------------------------------------------------
