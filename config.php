@@ -31,6 +31,7 @@
       'JWT_KEY' => 'canYouSmellWhatTheRockIsCooking',
       'JWT_ISS' => 'The Rock',
       'JWT_IAT' => 'now',
+      'JWT_ALGORITHM' => 'HS256',
 
       // S3
       'S3_UPLOAD_DIR' => '__S3__', // relative to the root directory

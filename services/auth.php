@@ -6,7 +6,7 @@
 
         if(array_key_exists(Config::get('JWT_HEADER'), $requestHeaders) === true) {
           try {
-            $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get('JWT_HEADER')], Config::get('JWT_KEY'), ['HS256']);
+            $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get('JWT_HEADER')], Config::get('JWT_KEY'), [Config::get('JWT_ALGORITHM')]);
           } catch(Exception $e) {
             Rock::halt(401, 'invalid authorization token');
           }
