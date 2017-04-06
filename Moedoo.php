@@ -1,5 +1,10 @@
 <?php
   class Moedoo {
+    // this will hold all the table names that will be be cached for depth references
+    private static $MAPPER = [];
+    // this will hold table rows with ['tableName' => ['id' => 'row']] structure
+    // this will sacrifice the memory in-order to gain much needed performance boost
+    // on larger depth requests (especially with queries)
     private static $CACHE_MAP = [];
 
     /**
@@ -28,7 +33,35 @@
     }
 
     /**
+     * MAPPER - recursive builder for `CACHE_BUILDER`
+     *
+     * @param String $table
+     * @param Integer &$depth
+     * @param Array &$MAPPER
+     */
+    public static function MAPPER($table, &$depth, &$MAPPER) {
+      if ($depth-- > 0 && isset(Config::get('TABLES')[$table]['fk']) === true) {
+        foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
+          if (preg_match('/^\[.+\]$/', $column) === 1 || preg_match('/^[a-z]+/', $column) === 1) {
+            $MAPPER[$referenceRule['table']] = $referenceRule['references'];
+            $illBeBack = $depth;
+            Moedoo::MAPPER($referenceRule['table'], $depth, $MAPPER);
+            $depth = $illBeBack; // this makes sure every rules gets the same depth on a go
+          } else if (preg_match('/^\{.+\}$/', $column) === 1) {
+            $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
+            $illBeBack = $depth;
+            Moedoo::MAPPER($referenceRule['table'], $depth, $MAPPER);
+            $depth = $illBeBack;
+          }
+        }
+      }
+
+      return $MAPPER;
+    }
+
+    /**
      * builds fk iterating over CACHE_MAP
+     *
      * @param String $tFK
      * @param Array $rFK
      * @param Integer &$dFK
@@ -36,12 +69,13 @@
      * @return Array
      */
     public static function FK($tFK, $rFK, &$dFK, $CACHE_MAP) {
-      if (--$dFK >= 0) {
+      if ($dFK-- >= 0) {
         if (isset(Config::get('TABLES')[$tFK]['fk']) === true) {
           foreach (Config::get('TABLES')[$tFK]['fk'] as $column => $referenceRule) {
             if (preg_match('/^\[.+\]$/', $column) === 1) {
               $column = trim($column, '[]');
               $fkMapped = [];
+
               foreach ($rFK[$column] as $j => $fkId) {
                 if (isset($CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
                   $d = $dFK - 1;
@@ -100,74 +134,10 @@
       // fk rules exist for the table
       if (isset(Config::get('TABLES')[$table]['fk']) === true) {
         if ($depth > 0) {
-          // building map for FK -------------------------------------------------------------------
-          // we're going to be building the "depth-tree" for each rule independently
-          $MAPPER = [];
-
-          $d = 1;
-          $t = $table;
-          while ($d <= $depth) {
-            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
-              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
-                if (preg_match('/^[a-z]+/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-                  $t = $referenceRule['table'];
-                } else if (preg_match('/^\[.+\]$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-                } else if (preg_match('/^\{.+\}$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
-                }
-              }
-            }
-
-            $d++;
-          }
-          // ./ building map for FK ----------------------------------------------------------------
-
-          // building map for FK[] -----------------------------------------------------------------
-          $d = 1;
-          $t = $table;
-          while ($d <= $depth) {
-            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
-              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
-                if (preg_match('/^\[.+\]$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-                  $t = $referenceRule['table'];
-                } else if (preg_match('/^[a-z]+/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-                } else if (preg_match('/^\{.+\}$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
-                }
-              }
-            }
-
-            $d++;
-          }
-          // ./ building map for FK[] --------------------------------------------------------------
-
-          // building map for FK{} -----------------------------------------------------------------
-          $d = 1;
-          $t = $table;
-          while ($d <= $depth) {
-            if (isset(Config::get('TABLES')[$t]['fk']) === true) {
-              foreach (Config::get('TABLES')[$t]['fk'] as $column => $referenceRule) {
-                if (preg_match('/^\{.+\}$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
-                  $t = $referenceRule['table'];
-                } else if (preg_match('/^[a-z]+/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-                } else if (preg_match('/^\[.+\]$/', $column) === 1) {
-                  $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-                }
-              }
-            }
-
-            $d++;
-          }
-          // ./ building map for FK{} --------------------------------------------------------------
+          Moedoo::MAPPER($table, $depth, Moedoo::$MAPPER);
 
           // passing to cache builder --------------------------------------------------------------
-          foreach ($MAPPER as $t => $id) {
+          foreach (Moedoo::$MAPPER as $t => $id) {
             Moedoo::CACHE_BUILDER($t, $id, Moedoo::$CACHE_MAP);
           }
           // ./ passing to cache builder -----------------------------------------------------------

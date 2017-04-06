@@ -31,6 +31,7 @@
       'JWT_KEY' => 'canYouSmellWhatTheRockIsCooking',
       'JWT_ISS' => 'The Rock',
       'JWT_IAT' => 'now',
+      'JWT_ALGORITHM' => 'HS256',
 
       // S3
       'S3_UPLOAD_DIR' => '__S3__', // relative to the root directory
@@ -93,15 +94,9 @@
         ],
         's3'          => [
           'pk'        => 'id',
-          'columns'   => ['id', 'name', 'size', 'type', 'url', 'rock', 'rock_m'],
-          'returning' => ['id', 'name', 'size', 'type', 'url', 'rock', 'rock_m'],
-          'int'       => ['id', 'size', 'rock'],
-          '[int]'     => ['rock_m'],
-          'fk'        => [
-            'rock'    => ['table' => 'rock', 'references' => 'id'],
-            '[rock_m]'=> ['table' => 'rock', 'references' => 'id'],
-            '{rock}'  => ['table' => 'rock', 'referenced_by' => 'id', 'referencing_column' => 'col_fk']
-          ]
+          'columns'   => ['id', 'name', 'size', 'type', 'url'],
+          'returning' => ['id', 'name', 'size', 'type', 'url'],
+          'int'       => ['id', 'size']
         ],
         'tag'         => [
           'pk'        => 'id',
