@@ -5,12 +5,12 @@
      *
      * @return array - user info from db
      */
-    public static function authenticated ($method, $table) {
+    public static function authenticated($method, $table) {
       $requestHeaders = Rock::getHeaders();
 
       if (array_key_exists(Config::get('JWT_HEADER'), $requestHeaders) === true) {
         try {
-          $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get('JWT_HEADER')], Config::get('JWT_KEY'), ['HS256']);
+          $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get('JWT_HEADER')], Config::get('JWT_KEY'), [Config::get('JWT_ALGORITHM')]);
         } catch (Exception $e) {
           Rock::halt(401, 'invalid authorization token');
         }
@@ -81,12 +81,12 @@
      *
      * @return A.Array | false
      */
-    public static function hasValidToken () {
+    public static function hasValidToken() {
       $requestHeaders = Rock::getHeaders();
 
       if (array_key_exists(Config::get('JWT_HEADER'), $requestHeaders) === true) {
         try {
-          $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get('JWT_HEADER')], Config::get('JWT_KEY'), ['HS256']);
+          $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get('JWT_HEADER')], Config::get('JWT_KEY'), [Config::get('JWT_ALGORITHM')]);
         } catch (Exception $e) {
           return false;
         }
@@ -129,7 +129,7 @@
      * @param $permission String
      * @return Boolean
      */
-    public static function hasPermission ($user, $permission) {
+    public static function hasPermission($user, $permission) {
       if (array_key_exists($permission, $user['user_group']) === true) {
         if ($user['user_group'][$permission] === true) return true;
         else return false;
@@ -147,7 +147,7 @@
      * @param string $username
      * @param string $password - raw password
      */
-    public static function authenticate ($username, $password) {
+    public static function authenticate($username, $password) {
       $username = strtolower($username);
       $username = preg_replace('/ /', '_', $username);
       $password = Rock::hash($password);
@@ -202,7 +202,7 @@
      * @param string $table
      * @param string $role
      */
-    public static function check ($method, $table) {
+    public static function check($method, $table) {
       if (array_key_exists($table, Config::get('TABLES')) === false) {
         Rock::halt(404, "requested resource `{$table}` does not exist");
       }
@@ -225,7 +225,7 @@
      * @param string $table - table name to check validation against
      * @return associative array representation of the passed body
      */
-    public static function getBody ($table = null) {
+    public static function getBody($table = null) {
       $streamHandle = fopen('php://input', 'r');
       $body = (string)stream_get_contents($streamHandle);
       fclose($streamHandle);
@@ -251,7 +251,7 @@
      * @param array $data
      * @param integer $status
      */
-    public static function JSON ($data, $status = 200) {
+    public static function JSON($data, $status = 200) {
       $requestHeaders = Rock::getHeaders();
       $origin = array_key_exists('Origin', $requestHeaders) === true ? $requestHeaders['Origin'] : '*';
       header("HTTP/1.1 {$status} ". Util::$codes[$status]);
@@ -260,7 +260,7 @@
       header('Access-Control-Allow-Headers: '. implode(', ', Config::get('CORS_HEADERS')));
       header('Access-Control-Allow-Credentials: true');
       header('Access-Control-Max-Age: '. Config::get('CORS_MAX_AGE'));
-      header('Content-Type: application/json;charset=utf-8');
+      header('Content-Type: application/vnd.api+json;charset=utf-8');
       echo json_encode($data);
     }
 
@@ -273,7 +273,7 @@
      * @param integer $status
      * @param string $message - message to be sent back with `error` property
      */
-    public static function halt ($status = 401, $message = null) {
+    public static function halt($status = 401, $message = null) {
       if ($message === null) {
         header("HTTP/1.1 {$status} ". Util::$codes[$status]);
         header('Content-Type: application/json;charset=utf-8');
@@ -294,7 +294,7 @@
      * @param string $string
      * @return string
      */
-    public static function hash ($string) {
+    public static function hash($string) {
       $hash = hash_init(Config::get('HASH'));
       hash_update($hash, $string);
       hash_update($hash, Config::get('SALT'));
@@ -310,7 +310,7 @@
      * exception header
      * 4: unable to process request headers
      */
-    public static function getHeaders () {
+    public static function getHeaders() {
       $headers = getallheaders();
 
       if ($headers === false) {
@@ -328,7 +328,7 @@
      * @param String $tempPath
      * @return Boolean | String
      */
-    public static function MIMEIsAllowed ($tempPath) {
+    public static function MIMEIsAllowed($tempPath) {
       $finfo = finfo_open(FILEINFO_MIME_TYPE);
       $mime = finfo_file($finfo, $tempPath);
       finfo_close($finfo);
