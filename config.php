@@ -94,15 +94,9 @@
         ],
         's3'          => [
           'pk'        => 'id',
-          'columns'   => ['id', 'name', 'size', 'type', 'url', 'rock', 'rock_m'],
-          'returning' => ['id', 'name', 'size', 'type', 'url', 'rock', 'rock_m'],
-          'int'       => ['id', 'size', 'rock'],
-          '[int]'     => ['rock_m'],
-          'fk'        => [
-            'rock'    => ['table' => 'rock', 'references' => 'id'],
-            '[rock_m]'=> ['table' => 'rock', 'references' => 'id'],
-            '{rock}'  => ['table' => 'rock', 'referenced_by' => 'id', 'referencing_column' => 'col_fk']
-          ]
+          'columns'   => ['id', 'name', 'size', 'type', 'url'],
+          'returning' => ['id', 'name', 'size', 'type', 'url'],
+          'int'       => ['id', 'size']
         ],
         'tag'         => [
           'pk'        => 'id',
