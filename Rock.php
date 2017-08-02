@@ -179,7 +179,7 @@
 
           // TODO
           // make a fingerprint so that the token stays locked-down
-          $jwt = Firebase\JWT\JWT::encode($token, Config::get('JWT_KEY'));
+          $jwt = Firebase\JWT\JWT::encode($token, Config::get('JWT_KEY'), Config::get('JWT_ALGORITHM'));
           Rock::JSON(['jwt' => $jwt, 'user' => $user], 202);
         }
       }
