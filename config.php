@@ -21,12 +21,12 @@
        */
       'ROOT_URL' => '',
 
-      'TABLE_PREFIX'  => 'tr001_',
+      'TABLE_PREFIX'  => 'tr100_',
       'HASH' => 'sha512',
       'SALT' => 'canYouSmellWhatTheRockIsCooking',
 
       // JWT
-      'JWT_HEADER' => 'X-Access-Token',
+      'JWT_HEADER' => 'Authorization',
       'JWT_KEY' => 'canYouSmellWhatTheRockIsCooking',
       'JWT_ISS' => 'The Rock',
       'JWT_IAT' => 'now',
@@ -53,7 +53,7 @@
       // CORS
       'CORS_WHITE_LIST' => ['*', 'rock.io', 'foo.com'],
       'CORS_METHODS' => ['GET', 'POST', 'PATCH', 'DELETE'],
-      'CORS_HEADERS' => ['Accept', 'Content-Type', 'Content-Range', 'Content-Disposition', 'X-Access-Token'],
+      'CORS_HEADERS' => ['Accept', 'Content-Type', 'Content-Range', 'Content-Disposition', 'Authorization'],
       'CORS_MAX_AGE' => '86400',
 
       // requests that require authentication + tailored permission
