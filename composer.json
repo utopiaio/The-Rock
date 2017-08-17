@@ -3,7 +3,7 @@
     "type": "micro-framework",
     "description": "REST with a budget",
     "keywords": ["REST", "micro-framework"],
-    "homepage": "https://github.com/moe-szyslak/The-Rock",
+    "homepage": "https://github.com/utopiaio/The-Rock",
     "license": "MIT",
     "require": {
         "firebase/php-jwt": "^3.0",
