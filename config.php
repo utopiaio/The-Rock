@@ -1,10 +1,9 @@
 <?php
   /**
-   * The Rock - a micro "framework" built on top of FastRoute (more like with)
+   * The Rock - a micro "framework" with a budget
    *
-   * @author    Moe Szyslak <moe.duffdude@gmail.com>
-   * @version   0.6.1
-   * @package   Deez Nuts
+   * @author    Utopia፲ <utopiaio@yahoo.com>
+   * @version   1.0.0
    */
 
   date_default_timezone_set('Africa/Addis_Ababa');
