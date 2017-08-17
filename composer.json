@@ -6,7 +6,7 @@
     "homepage": "https://github.com/utopiaio/The-Rock",
     "license": "MIT",
     "require": {
-        "firebase/php-jwt": "^3.0",
-        "nikic/fast-route": "^0.6.0"
+        "firebase/php-jwt": "5.0.0",
+        "nikic/fast-route": "1.2.0"
     }
 }
