@@ -7,6 +7,7 @@
 
   require __DIR__ .'/vendor/autoload.php';
   require __DIR__ .'/config.php';
+  require __DIR__ .'/SQLite.php';
   require __DIR__ .'/Moedoo.php';
   require __DIR__ .'/Rock.php';
   require __DIR__ .'/Util.php';
