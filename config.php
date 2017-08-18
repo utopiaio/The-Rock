@@ -39,7 +39,8 @@
       'S3_FILE_NAME_SIZE' => 6,
       'S3_ALLOWED_MIME' => ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/rtf', 'application/epub+zip', 'text/plain', 'application/json', 'application/octet-stream', 'application/zip'],
 
-      // database
+      // SQLite
+      'DB_FILE' => __DIR__ . '/db/rock.sqlite',
       'DB_HOST' => 'localhost',
       'DB_USER' => 'moe',
       'DB_PASSWORD' => '\"\"',

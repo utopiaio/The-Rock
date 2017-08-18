@@ -1,10 +1,4 @@
 <?php
-  class SQLite extends SQLite3 {
-    function __construct($path) {
-      $this -> open($path);
-    }
-  }
-
   class Moedoo {
     // this will hold all the table names that will be be cached for depth references
     private static $MAPPER = [];
