@@ -1,4 +1,10 @@
 <?php
+  class SQLite extends SQLite3 {
+    function __construct($path) {
+      $this -> open($path);
+    }
+  }
+
   class Moedoo {
     // this will hold all the table names that will be be cached for depth references
     private static $MAPPER = [];
@@ -397,23 +403,15 @@
 
 
     /**
-     * instantiates db connection
+     * creates SQLite resource
      *
-     * @param string $host
-     * @param string $port
-     * @param string $user
-     * @param string $password
-     * @param string $dbname
-     * @param string $host
-     * @return connection resource
+     * @param  string $path file path for the SQLite file
+     * @return db resource
      */
-    public static function db($host, $port, $user, $password, $dbname) {
-      $dbConnection = pg_pconnect("host={$host} port={$port} user={$user} password={$password} dbname={$dbname}");
-      if ($dbConnection === false) {
-        Rock::halt(500, 'unable to connect to database');
-      }
+    public static function db($path) {
+      $db = new SQLite($path, SQLITE3_OPEN_READWRITE);
 
-      return $dbConnection;
+      return $db;
     }
 
 
