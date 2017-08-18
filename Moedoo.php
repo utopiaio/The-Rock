@@ -404,6 +404,7 @@
      */
     public static function db($path) {
       $db = new SQLite($path, SQLITE3_OPEN_READWRITE);
+      $db -> busyTimeout(Config::get('DB_BUSY_TIMEOUT'));
 
       return $db;
     }
