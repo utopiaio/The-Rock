@@ -260,7 +260,7 @@
       header('Access-Control-Allow-Headers: '. implode(', ', Config::get('CORS_HEADERS')));
       header('Access-Control-Allow-Credentials: true');
       header('Access-Control-Max-Age: '. Config::get('CORS_MAX_AGE'));
-      header('Content-Type: application/vnd.api+json;charset=utf-8');
+      header('Content-Type: application/json;charset=utf-8');
       echo json_encode($data);
     }
 
