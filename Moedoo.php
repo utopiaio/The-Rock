@@ -21,7 +21,7 @@
         $CACHE_MAP[$table] = [];
 
         $columns = Moedoo::buildReturn($table);
-        $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$table}";
+        $query = "SELECT {$columns} FROM {$table}";
         $includeRows = Moedoo::executeQuery($table, $query, []);
         $includeRows = Moedoo::cast($table, $includeRows);
 
@@ -431,7 +431,7 @@
       $q = preg_replace('/ +/', '|', trim($q));
       $q = preg_replace('/ /', '|', $q);
       $params = [$q];
-      $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$table} WHERE ";
+      $query = "SELECT {$columns} FROM {$table} WHERE ";
       $where = '';
       $order_by = 'ORDER BY';
 
@@ -482,7 +482,7 @@
      * @return integer
      */
     public static function count($table) {
-      $query = 'SELECT count('. Config::get('TABLES')[$table]['pk'] .') as count FROM '. Config::get('TABLE_PREFIX') ."{$table};";
+      $query = 'SELECT count('. Config::get('TABLES')[$table]['pk'] .") as count FROM {$table};";
       $params = [];
       try {
         $rows = Moedoo::executeQuery($table, $query, $params);
@@ -515,7 +515,7 @@
      */
     public static function select($table, $and = null, $or = null, &$depth = 1, $limit = -1, $offset = 0) {
       $columns = Moedoo::buildReturn($table);
-      $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$table}";
+      $query = "SELECT {$columns} FROM {$table}";
       $params = [];
 
       if ($and === null && $or === null) {
@@ -621,7 +621,7 @@
       $holders = implode(', ', $holders);
       $returning = Moedoo::buildReturn($table);
 
-      $query = 'INSERT INTO '. Config::get('TABLE_PREFIX') ."{$table} ({$columns}) VALUES ({$holders});";
+      $query = "INSERT INTO {$table} ({$columns}) VALUES ({$holders});";
       try {
         $rowId = Moedoo::executeQuery($table, $query, $params);
 
@@ -667,7 +667,7 @@
       $set = implode(', ', $set);
       array_push($params, $id);
 
-      $query = 'UPDATE '. Config::get('TABLE_PREFIX') ."{$table} SET {$set} WHERE ". Config::get('TABLES')[$table]['pk'] ."=\${$count};";
+      $query = "UPDATE {$table} SET {$set} WHERE ". Config::get('TABLES')[$table]['pk'] ."=\${$count};";
       try {
         $changeCount = Moedoo::executeQuery($table, $query, $params);
 
