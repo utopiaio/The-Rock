@@ -21,7 +21,6 @@
        */
       'ROOT_URL' => '',
 
-      'TABLE_PREFIX'  => 'tr100_',
       'HASH' => 'sha512',
       'SALT' => 'canYouSmellWhatTheRockIsCooking',
 
@@ -78,15 +77,13 @@
       'TABLES' => [
         'rock'        => [
           'pk'        => 'id',
-          'columns'   => ['id', 'col_integer', 'col_float', 'col_double', 'col_json', 'col_bool', 'col_geometry', 'col_string', 'col_fk', 'col_fk_m'],
-          'returning' => ['id', 'col_integer', 'col_float', 'col_double', 'col_json', 'col_bool', 'col_geometry', 'col_string', 'col_fk', 'col_fk_m'],
+          'columns'   => ['id', 'col_integer', 'col_float', 'col_json', 'col_bool', 'col_string', 'col_fk', 'col_fk_m'],
+          'returning' => ['id', 'col_integer', 'col_float', 'col_json', 'col_bool', 'col_string', 'col_fk', 'col_fk_m'],
           'bool'      => ['col_bool'],
           'int'       => ['id', 'col_integer', 'col_fk'],
           '[int]'     => ['col_fk_m'],
           'float'     => ['col_float'],
-          'double'    => ['col_double'],
           'JSON'      => ['col_json'],
-          'geometry'  => ['col_geometry'],
           'search'    => ['col_string'],
           'fk'        => [
             'col_fk'      => ['table' => 's3', 'references' => 'id'],
@@ -166,7 +163,7 @@
      *
      * @param string $key
      */
-    public static function get ($key = 'TheRock') {
+    public static function get($key = 'TheRock') {
       if (array_key_exists($key, Config::$CONFIG) === false) {
         throw new Exception("undefined key `{$key}`", 1);
       }
