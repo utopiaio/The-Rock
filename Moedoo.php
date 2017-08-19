@@ -229,7 +229,7 @@
      * @param array $data - data to be prepared for db operation
      * @return array - database operation ready data
      */
-    public static function castForPg($table, $data) {
+    public static function castForSQLite($table, $data) {
       foreach ($data as $column => &$value) {
         if (array_key_exists('JSON', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['JSON']) === true) {
           $value = json_encode($value);
@@ -262,10 +262,6 @@
       // this right here saves gives 200% performance boost on large datasets query
       $CAST_FLAG = [
         'JSON' => [],
-        'geometry' => [],
-        'int' => [],
-        'float' => [],
-        'double' => [],
         'bool' => [],
         '[int]' => []
       ];
@@ -273,10 +269,6 @@
       if (count($rows) > 0 && isset($rows[0][Config::get('TABLES')[$table]['pk']]) === true) {
         foreach (Config::get('TABLES')[$table]['returning'] as $index => $column) {
           $CAST_FLAG['JSON'][$column] = array_key_exists('JSON', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['JSON']) === true;
-          $CAST_FLAG['geometry'][$column] = array_key_exists('geometry', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['geometry']) === true;
-          $CAST_FLAG['int'][$column] = array_key_exists('int', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['int']) === true;
-          $CAST_FLAG['float'][$column] = array_key_exists('float', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['float']) === true;
-          $CAST_FLAG['double'][$column] = array_key_exists('double', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['double']) === true;
           $CAST_FLAG['bool'][$column] = array_key_exists('bool', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['bool']) === true;
           $CAST_FLAG['[int]'][$column] = array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true;
         }
@@ -287,24 +279,8 @@
               $value = json_decode($value);
             }
 
-            else if ($CAST_FLAG['geometry'][$column] === true) {
-              $value = json_decode($value);
-            }
-
-            else if ($CAST_FLAG['int'][$column] === true) {
-              $value = is_numeric($value) === true ? (int)$value : null;
-            }
-
-            else if ($CAST_FLAG['float'][$column] === true) {
-              $value = is_numeric($value) === true ? (float)$value : null;
-            }
-
-            else if ($CAST_FLAG['double'][$column] === true) {
-              $value = is_numeric($value) === true ? (double)$value : null;
-            }
-
             else if ($CAST_FLAG['bool'][$column] === true) {
-              $value = $value === 't' ? true : false;
+              $value = $value === 'TRUE' ? true : false;
             }
 
             // for now (and probably forever) we can only work with 1D arrays
@@ -604,7 +580,7 @@
      * @return array - the newly inserted row
      */
     public static function insert($table, $data, $depth = 1) {
-      $data = Moedoo::castForPg($table, $data);
+      $data = Moedoo::castForSQLite($table, $data);
       $count = 1;
       $columns = [];
       $holders = []; // ${$index}
@@ -630,7 +606,6 @@
 
         // currently we're only supporting single row insert
         if (count($rows) === 1) {
-          $rows = Moedoo::cast($table, $rows);
           $rows = Moedoo::referenceFk($table, $rows, $depth);
           return $rows[0];
         } else {
@@ -652,7 +627,7 @@
      * @return array | null
      */
     public static function update($table, $data, $id, $depth = 1) {
-      $data = Moedoo::castForPg($table, $data);
+      $data = Moedoo::castForSQLite($table, $data);
       $count = 1;
       $set = [];
       $params = [];
@@ -675,7 +650,6 @@
         if ($changeCount === 1) {
           // RETURNING
           $rows = Moedoo::select($table, [Config::get('TABLES')[$table]['pk'] => $id], null, $depth);
-          $rows = Moedoo::cast($table, $rows);
           $rows = Moedoo::referenceFk($table, $rows, $depth);
           return $rows[0];
         }
