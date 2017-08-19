@@ -6,6 +6,7 @@
     // this will sacrifice the memory in-order to gain much needed performance boost
     // on larger depth requests (especially with queries)
     private static $CACHE_MAP = [];
+    private static $db = null;
 
     /**
      * cache builder
@@ -213,11 +214,7 @@
       $build = '';
 
       foreach (Config::get('TABLES')[$table]['returning'] as $index => $column) {
-        if (array_key_exists('geometry', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['geometry']) === true) {
-          $build .= "ST_AsGeoJSON({$column}) as {$column}, ";
-        } else {
-          $build .= "{$column}, ";
-        }
+        $build .= "{$column}, ";
       }
 
       return substr($build, 0, -2);
@@ -242,13 +239,8 @@
           $value = $value === true ? 'TRUE' : 'FALSE';
         }
 
-        if (array_key_exists('geometry', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['geometry']) === true) {
-          $value = json_encode($value);
-        }
-
         if ((array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true) ||
-            (array_key_exists('[float]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[float]']) === true) ||
-            (array_key_exists('[double]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[double]']) === true) ) {
+            (array_key_exists('[float]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[float]']) === true)) {
           $value = '{'. implode(',', $value) .'}';
         }
       }
@@ -346,52 +338,66 @@
      * @return Array
      */
     public static function executeQuery($table, $query, $params = []) {
-      $dbConnection = Moedoo::db(Config::get('DB_HOST'), Config::get('DB_PORT'), Config::get('DB_USER'), Config::get('DB_PASSWORD'), Config::get('DB_NAME'));
+      $db = Moedoo::db(Config::get('DB_FILE'), Config::get('DB_BUSY_TIMEOUT'));
 
-      if (pg_send_query_params($dbConnection, $query, $params)) {
-        $resource = pg_get_result($dbConnection);
-        $state = pg_result_error_field($resource, PGSQL_DIAG_SQLSTATE);
-        if ($state == 0) {
-          if ($resource === false || pg_fetch_all($resource) === false) {
-            return [];
-          } else {
-            return pg_fetch_all($resource);
-          }
-        } else {
-          switch($state) {
-            // duplicate
-            case '23505':
-              throw new Exception('request violets duplicate constraint', 2);
+      $querySelect = preg_match('/^SELECT/', $query);
+      $queryInsert = preg_match('/^INSERT/', $query);
+      $queryUpdate = preg_match('/^UPDATE/', $query);
+      $queryDelete = preg_match('/^DELETE/', $query);
+
+      if (count($params) > 0) {
+        $statement = $db -> prepare($query);
+
+        for ($i = 0; $i < count($params); $i++) {
+          $iPlus1 = $i + 1;
+          $statement -> bindValue("{$iPlus1}", $params[$i]);
+        }
+
+        $result = $statement -> execute();
+        $result -> finalize();
+      } else {
+        $result = $db -> query($query);
+      }
+
+      if ($result === false) {
+        switch ($db -> lastErrorCode()) {
+          case 787:
+            throw new Exception('request violets foreign key constraint', 3);
             break;
 
-            // foreign key
-            case '23503':
-              throw new Exception('request violets foreign key constraint', 3);
+          case 2067:
+            throw new Exception('request violets duplicate constraint', 2);
             break;
 
-            default:
-              $querySelect = preg_match('/^SELECT/', $query);
-              $queryInsert = preg_match('/^INSERT/', $query);
-              $queryUpdate = preg_match('/^UPDATE/', $query);
-              $queryDelete = preg_match('/^DELETE/', $query);
-
-              // we won't be giving detailed error in order "protect" the system
-              if ($querySelect === 1) {
-                throw new Exception("unable to select from table `{$table}`", 1);
-              } else if ($queryInsert === 1) {
-                throw new Exception("unable to save `{$table}`", 1);
-              } else if ($queryUpdate === 1) {
-                throw new Exception("unable to update `{$table}`", 1);
-              } else if ($queryDelete === 1) {
-                throw new Exception("unable to delete record from table `{$table}`", 1);
-              } else {
-                throw new Exception('error processing query', 1);
-              }
+          default:
+            // we won't be giving detailed error in order "protect" the system
+            if ($querySelect === 1) {
+              throw new Exception("unable to select from table `{$table}`", 1);
+            } else if ($queryInsert === 1) {
+              throw new Exception("unable to save `{$table}`", 1);
+            } else if ($queryUpdate === 1) {
+              throw new Exception("unable to update `{$table}`", 1);
+            } else if ($queryDelete === 1) {
+              throw new Exception("unable to delete record from table `{$table}`", 1);
+            } else {
+              throw new Exception('error processing query', 1);
+            }
             break;
-          }
         }
       } else {
-        throw new Exception("unable to process query on table `{$table}`", 1);
+        if ($querySelect === 1) {
+          $rows = [];
+
+          while ($row = $result -> fetchArray(SQLITE3_ASSOC)) {
+            array_push($rows, $row);
+          }
+
+          return $rows;
+        } else if ($queryInsert === 1) {
+          return $db -> lastInsertRowID();
+        } else if ($queryUpdate === 1 || $queryDelete === 1) {
+          return $db -> changes();
+        }
       }
     }
 
@@ -402,11 +408,13 @@
      * @param  string $path file path for the SQLite file
      * @return db resource
      */
-    public static function db($path) {
-      $db = new SQLite($path, SQLITE3_OPEN_READWRITE);
-      $db -> busyTimeout(Config::get('DB_BUSY_TIMEOUT'));
+    public static function db($path, $busyTimeout) {
+      if (Moedoo::$db === null) {
+        Moedoo::$db = new SQLite($path, SQLITE3_OPEN_READWRITE);
+        Moedoo::$db -> busyTimeout($busyTimeout);
+      }
 
-      return $db;
+      return Moedoo::$db;
     }
 
 
@@ -418,7 +426,7 @@
      * @param string $limit
      * @param integer $depth
      */
-    public static function search($table, $q, $limit = 'ALL', $depth = 1) {
+    public static function search($table, $q, $limit = -1, $depth = 1) {
       $columns = Moedoo::buildReturn($table);
       $q = preg_replace('/ +/', '|', trim($q));
       $q = preg_replace('/ /', '|', $q);
@@ -447,6 +455,7 @@
 
         $order_by = substr($order_by, 0, -2);
         $limit = "LIMIT {$limit}";
+
         try {
           $rows = Moedoo::executeQuery($table, "{$query} {$where} {$order_by} {$limit};", $params);
 
@@ -504,7 +513,7 @@
      * @param integer $offset - offset on query
      * @return affected rows or null if an error occurred
      */
-    public static function select($table, $and = null, $or = null, &$depth = 1, $limit = 'ALL', $offset = 0) {
+    public static function select($table, $and = null, $or = null, &$depth = 1, $limit = -1, $offset = 0) {
       $columns = Moedoo::buildReturn($table);
       $query = "SELECT {$columns} FROM ". Config::get('TABLE_PREFIX') ."{$table}";
       $params = [];
@@ -568,6 +577,7 @@
       }
 
       $query .= "LIMIT {$limit} OFFSET {$offset};";
+
       try {
         $rows = Moedoo::executeQuery($table, $query, $params);
 
@@ -602,15 +612,7 @@
 
       foreach ($data as $column => $value) {
         array_push($columns, $column);
-
-        if (array_key_exists('geometry', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['geometry']) === true) {
-          array_push($holders, "ST_GeomFromGeoJSON(\${$count})");
-        }
-
-        else {
-          array_push($holders, "\${$count}");
-        }
-
+        array_push($holders, "\${$count}");
         array_push($params, $value);
         $count++;
       }
@@ -619,9 +621,12 @@
       $holders = implode(', ', $holders);
       $returning = Moedoo::buildReturn($table);
 
-      $query = 'INSERT INTO '. Config::get('TABLE_PREFIX') ."{$table} ({$columns}) VALUES ({$holders}) RETURNING {$returning};";
+      $query = 'INSERT INTO '. Config::get('TABLE_PREFIX') ."{$table} ({$columns}) VALUES ({$holders});";
       try {
-        $rows = Moedoo::executeQuery($table, $query, $params);
+        $rowId = Moedoo::executeQuery($table, $query, $params);
+
+        // fetching the last inserted row
+        $rows = Moedoo::select($table, [Config::get('TABLES')[$table]['pk'] => $rowId], null, $depth);
 
         // currently we're only supporting single row insert
         if (count($rows) === 1) {
@@ -632,7 +637,7 @@
           throw new Exception('error processing query', 1);
         }
       } catch (Exception $e) {
-        throw new Exception($e->getMessage(), 1);
+        throw new Exception($e -> getMessage(), 1);
       }
     }
 
@@ -654,14 +659,7 @@
       $columns = Moedoo::buildReturn($table);
 
       foreach ($data as $column => $value) {
-        if (array_key_exists('geometry', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['geometry']) === true) {
-          array_push($set, $column."=ST_GeomFromGeoJSON(\${$count})");
-        }
-
-        else {
-          array_push($set, $column."=\${$count}");
-        }
-
+        array_push($set, $column."=\${$count}");
         array_push($params, $value);
         $count++;
       }
@@ -669,12 +667,14 @@
       $set = implode(', ', $set);
       array_push($params, $id);
 
-      $query = 'UPDATE '. Config::get('TABLE_PREFIX') ."{$table} SET {$set} WHERE ". Config::get('TABLES')[$table]['pk'] ."=\${$count} RETURNING {$columns};";
+      $query = 'UPDATE '. Config::get('TABLE_PREFIX') ."{$table} SET {$set} WHERE ". Config::get('TABLES')[$table]['pk'] ."=\${$count};";
       try {
-        $rows = Moedoo::executeQuery($table, $query, $params);
+        $changeCount = Moedoo::executeQuery($table, $query, $params);
 
         // currently we're only supporting single row update
-        if (count($rows) === 1) {
+        if ($changeCount === 1) {
+          // RETURNING
+          $rows = Moedoo::select($table, [Config::get('TABLES')[$table]['pk'] => $id], null, $depth);
           $rows = Moedoo::cast($table, $rows);
           $rows = Moedoo::referenceFk($table, $rows, $depth);
           return $rows[0];
@@ -695,8 +695,8 @@
      * i didn't want to do this, but...
      * there comes a time were you want to just delete
      *
-     * EXCEPTION CODES
-     * 1: unable to update for unknown reason[s]
+     * EXCEPTION CODES:
+     * 1: unable to delete for _unknown_ reason[s]
      *
      * @param string $table
      * @param integer $id - id on which to delete on
@@ -705,19 +705,26 @@
     public static function delete($table, $id) {
       $params = [$id];
       $columns = Moedoo::buildReturn($table);
+      // RETURNING before deleting
+      $rows = Moedoo::select($table, [Config::get('TABLES')[$table]['pk'] => $id], null, $depth);
 
-      $query = 'DELETE FROM '. Config::get('TABLE_PREFIX') ."{$table} WHERE ". Config::get('TABLES')[$table]['pk'] ."=$1 RETURNING {$columns};";
-      try {
-        $rows = Moedoo::executeQuery($table, $query, $params);
+      if (count($rows) === 0) {
+        throw new Exception("`{$table}` with resource id `{$id}` does not exist", 1);
+      } else {
+        $query = "DELETE FROM {$table} WHERE ". Config::get('TABLES')[$table]['pk'] ."=$1;";
 
-        // currently we're only supporting single row deletion
-        if (count($rows) === 1) {
-          return $rows[0];
-        } elseif (count($rows) === 0) {
-          throw new Exception("`{$table}` with resource id `{$id}` does not exist", 1);
+        try {
+          $changeCount = Moedoo::executeQuery($table, $query, $params);
+
+          // currently we're only supporting single row deletion
+          if ($changeCount === 1) {
+            return $rows[0];
+          } else {
+            throw new Exception("`{$table}` with resource id `{$id}` does not exist", 1);
+          }
+        } catch (Exception $e) {
+          throw new Exception($e->getMessage(), 1);
         }
-      } catch (Exception $e) {
-        throw new Exception($e->getMessage(), 1);
       }
     }
   }
