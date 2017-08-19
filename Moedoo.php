@@ -149,7 +149,7 @@
               foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
                 if (preg_match('/^[a-z]+/', $column) === 1 && isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]]) === true) {
                   // we need to *preserve* depth so other
-                  // FK rules get a change to do their thing with depth
+                  // FK rules get a chance to do their thing with depth
                   $d = $depth - 1;
                   $row[$column] = Moedoo::FK($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]], $d, Moedoo::$CACHE_MAP);
                 }
