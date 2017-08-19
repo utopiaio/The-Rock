@@ -41,11 +41,6 @@
       // SQLite
       'DB_FILE' => __DIR__ . '/db/rock.sqlite',
       'DB_BUSY_TIMEOUT' => 30000, // 30 seconds
-      'DB_HOST' => 'localhost',
-      'DB_USER' => 'moe',
-      'DB_PASSWORD' => '\"\"',
-      'DB_PORT' => 5432,
-      'DB_NAME' => 'rock',
       'DEFAULT_DEPTH' => 1,
 
       // reference key (to be used for reverse referencing)
