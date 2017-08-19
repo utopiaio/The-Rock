@@ -21,7 +21,7 @@
         $CACHE_MAP[$table] = [];
 
         $columns = Moedoo::buildReturn($table);
-        $query = "SELECT {$columns} FROM {$table}";
+        $query = "SELECT {$columns} FROM {$table};";
         $includeRows = Moedoo::executeQuery($table, $query, []);
         $includeRows = Moedoo::cast($table, $includeRows);
 
