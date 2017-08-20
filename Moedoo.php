@@ -449,10 +449,8 @@
      */
     public static function search($table, $q, $limit = -1, $depth = 1) {
       $columns = Moedoo::buildReturn($table);
-      $q = preg_replace('/ +/', '|', trim($q));
-      $q = preg_replace('/ /', '|', $q);
-      $params = [$q];
-      $query = "SELECT {$columns} FROM {$table} WHERE ";
+      $q = preg_replace('/ +/', ' ', trim($q));
+      $query = "SELECT {$columns} FROM {$table} WHERE";
       $where = '';
       $order_by = 'ORDER BY';
 
@@ -462,23 +460,18 @@
       }
 
       else {
-        // building vector...
+        $db = Moedoo::db(Config::get('DB_FILE'), Config::get('DB_BUSY_TIMEOUT'));
+
         foreach (Config::get('TABLES')[$table]['search'] as $key => $value) {
-          $where .= "to_tsvector({$value}) @@ to_tsquery($1) OR ";
+          $where .= "{$value} LIKE '%". $db -> escapeString($q) ."%' OR ";
         }
 
         $where = substr($where, 0, -4);
 
-        // building rank...
-        foreach (Config::get('TABLES')[$table]['search'] as $key => $value) {
-          $order_by .= " ts_rank(to_tsvector($value), to_tsquery($1)) DESC, ";
-        }
-
-        $order_by = substr($order_by, 0, -2);
         $limit = "LIMIT {$limit}";
 
         try {
-          $rows = Moedoo::executeQuery($table, "{$query} {$where} {$order_by} {$limit};", $params);
+          $rows = Moedoo::executeQuery($table, "{$query} {$where} {$limit};", []);
 
           if (count($rows) === 0) {
             return [];
