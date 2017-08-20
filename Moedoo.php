@@ -504,9 +504,9 @@
      */
     public static function count($table) {
       $query = 'SELECT count('. Config::get('TABLES')[$table]['pk'] .") as count FROM {$table};";
-      $params = [];
+
       try {
-        $rows = Moedoo::executeQuery($table, $query, $params);
+        $rows = Moedoo::executeQuery($table, $query, []);
 
         if (count($rows) === 0) {
           $count = 0;
