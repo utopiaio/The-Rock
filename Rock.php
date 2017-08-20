@@ -203,6 +203,8 @@
      * @param string $role
      */
     public static function check($method, $table) {
+      $table = strtolower($table);
+
       if (array_key_exists($table, Config::get('TABLES')) === false) {
         Rock::halt(404, "requested resource `{$table}` does not exist");
       }
