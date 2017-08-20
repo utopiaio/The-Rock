@@ -48,8 +48,7 @@ Rock::getUrl() // returns URL
 ### Setup
 - Clone the app
 - Run `$ composer install`
-- Under `db` dump the database
-- Inside `config.php`, configure `ROOT_URL` (line 22), if the app lives in the root directory of from where it's going be served leave it empty. If the app lives inside another folder, say,`localhost:8080/rock/` then `ROOT_URL` becomes `/rock`
+- Inside `config.php`, configure `ROOT_URL` (line 22), if the app lives in the root directory of from where it's going be served leave it empty. If the app lives inside another folder, example: `localhost:8080/rock/` then `ROOT_URL` becomes `/rock`
 - Open `config.php`, configure the database, line 42-43
 - Fire up your browser and hit `PathToRock/s3` for list of files
 
