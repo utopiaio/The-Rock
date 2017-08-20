@@ -71,7 +71,7 @@
      * @param integer $length - the length of the string to be returned
      * @return string
      */
-    public static function randomString ($length) {
+    public static function randomString($length) {
       $seed = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       $size = strlen($seed) - 1;
       $str = '';
@@ -86,27 +86,18 @@
 
 
     /**
-     * given a JSON representation of a string, returns an associative array
-     * representation of it
+     * json_decode with a halt
      *
      * @param string $body
      * @return array
      */
-    public static function toArray ($body) {
-      $body = json_decode($body);
+    public static function toArray($body) {
+      $body = json_decode($body, true);
 
       if ($body === null) {
         Rock::halt(400, 'unable to parse body');
       }
 
-      else {
-        $array = [];
-
-        foreach ($body as $key => $value) {
-          $array[$key] = $value;
-        }
-
-        return $array;
-      }
+      return $body;
     }
   }
