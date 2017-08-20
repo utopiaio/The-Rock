@@ -2,9 +2,9 @@
   $__REST__["OPTIONS"] = function($routeInfo) {
     $requestHeaders = Rock::getHeaders();
     $origin = array_key_exists("Origin", $requestHeaders) === true ? $requestHeaders["Origin"] : "*";
-    $origin_stripped = preg_replace("/https?:\/\/|www\./", "", $origin);
+    $originStripped = preg_replace("/https?:\/\/|www\./", "", $origin);
 
-    if(in_array("*", Config::get("CORS_WHITE_LIST")) === true || in_array($origin_stripped, Config::get("CORS_WHITE_LIST")) === true) {
+    if(in_array("*", Config::get("CORS_WHITE_LIST")) === true || in_array($originStripped, Config::get("CORS_WHITE_LIST")) === true) {
       header("HTTP/1.1 202 Accepted");
       header("Access-Control-Allow-Origin: {$origin}");
       header("Access-Control-Allow-Methods: ". implode(", ", Config::get("CORS_METHODS")));
