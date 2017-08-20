@@ -27,7 +27,7 @@
 
     $r->addRoute('GET', Config::get('ROOT_URL').'/@S3/{filePath:.+}', 'S3');
     $r->addRoute('DELETE', Config::get('ROOT_URL').'/@S3/{filePath:.+}', 'S3');
-    $r->addRoute('POST', Config::get('ROOT_URL').'/S3', 'S3');
+    $r->addRoute('POST', Config::get('ROOT_URL').'/@S3', 'S3');
 
     $r->addRoute('OPTIONS', Config::get('ROOT_URL').'/[{path:.+}]', 'OPTIONS');
 
@@ -56,7 +56,7 @@
     case FastRoute\Dispatcher::FOUND:
       if (array_key_exists('table', $routeInfo[2]) === true) {
         Rock::check($_SERVER['REQUEST_METHOD'], $routeInfo[2]['table']);
-      } else if ($routeInfo[1] === 'S3') {
+      } else if ($routeInfo[1] === 'S3') { // file GET or DELETE
         Rock::check($_SERVER['REQUEST_METHOD'], 's3');
       }
 

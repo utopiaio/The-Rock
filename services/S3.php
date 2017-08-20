@@ -72,7 +72,7 @@
               unlink(Config::get('S3_UPLOAD_DIR') .'/'. $fileInfo['name']);
             }
           } catch (Exception $e) {
-            Rock::halt($e->getCode() === 1 ? 404 : 400, $e->getMessage());
+            Rock::halt($e -> getCode() === 1 ? 404 : 400, $e -> getMessage());
           }
         }
 
@@ -93,7 +93,7 @@
                 unlink(Config::get('S3_UPLOAD_DIR') .'/'. $fileInfo['name']);
               }
             } catch (Exception $e) {
-              Rock::halt(400, $e->getMessage());
+              Rock::halt(400, $e -> getMessage());
             }
           }
         }
