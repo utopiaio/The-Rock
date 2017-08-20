@@ -63,7 +63,7 @@ There you have it, `The Rock` should be running. You can get a pretty good under
 - `GET /{tableName}/count` return number of records
 - `GET /@S3/{fileName}` returns file
 - `DELETE /@S3/{fileName}` delete file
-- `POST /@S3/` save file
+- `POST /@S3` save file
 
 ### Authentication
 The Rock provides stateless, tailored authentication (see `user_group` table for more details). It uses JWT for authentication.
