@@ -10,13 +10,14 @@
 
     /**
      * cache builder
+     * [ [table] => [ columnId => row ] ]
      *
      * @param String $table
-     * @param String $id
+     * @param String $columnId
      * @param Array $CACHE_MAP
      * @return Array
      */
-    public static function CACHE_BUILDER($table, $id, &$CACHE_MAP) {
+    public static function CACHE_BUILDER($table, $columnId, &$CACHE_MAP) {
       if (isset($CACHE_MAP[$table]) === false) {
         $CACHE_MAP[$table] = [];
 
@@ -26,7 +27,7 @@
         $includeRows = Moedoo::cast($table, $includeRows);
 
         foreach ($includeRows as $index => $includeRow) {
-          $CACHE_MAP[$table][$includeRow[$id]] = $includeRow;
+          $CACHE_MAP[$table][$includeRow[$columnId]] = $includeRow;
         }
       }
 
