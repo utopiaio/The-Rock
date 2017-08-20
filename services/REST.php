@@ -8,7 +8,7 @@
     switch($_SERVER['REQUEST_METHOD']) {
       case 'GET':
         if (isset($_GET['q']) === true && $id === -1) {
-          $limit = (isset($_GET['limit']) === true && preg_match('/^\d+$/', $_GET['limit'])) ? $_GET['limit'] : 'ALL';
+          $limit = (isset($_GET['limit']) === true && preg_match('/^\d+$/', $_GET['limit'])) ? $_GET['limit'] : -1;
           Rock::JSON(Moedoo::search($table, $_GET['q'], $limit, $depth), 200);
         }
 
