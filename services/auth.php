@@ -41,7 +41,7 @@
       case 'POST':
         $body = Rock::getBody();
 
-        if(!array_key_exists('username', $body) || !array_key_exists('password', $body)) {
+        if (!array_key_exists('username', $body) || !array_key_exists('password', $body)) {
           Rock::halt(400, 'body must have `username` and `password`');
         }
 
