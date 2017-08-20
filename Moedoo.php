@@ -84,7 +84,13 @@
               // ANC - this shouldn't happen - but it's happening
             }
 
-            // [col_name]
+            // column
+            else if (preg_match('/^[a-z].+/', $column) === 1 && isset($CACHE_MAP[$referenceRule['table']][$rFK[$column]]) === true) {
+              $d = $dFK;
+              $rFK[$column] = Moedoo::FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$rFK[$column]], $d, $CACHE_MAP);
+            }
+
+            // [column]
             else if (preg_match('/^\[.+\]$/', $column) === 1) {
               $column = trim($column, '[]');
               $fkMapped = [];
@@ -99,7 +105,7 @@
               $rFK[$column] = $fkMapped;
             }
 
-            // {col_name}
+            // {column}
             else if (preg_match('/^\{.+\}$/', $column) === 1) {
               $column = trim($column, '{}');
               $rFK[Config::get('REFERENCE_KEY')][$column] = [];
@@ -123,12 +129,6 @@
                   }
                 }
               }
-            }
-
-            // col_name
-            else if (preg_match('/^[a-z]+/', $column) === 1 && isset($CACHE_MAP[$referenceRule['table']][$rFK[$column]]) === true) {
-              $d = $dFK;
-              $rFK[$column] = Moedoo::FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$rFK[$column]], $d, $CACHE_MAP);
             }
           }
         }
@@ -161,18 +161,48 @@
           foreach ($rows as $i => &$row) {
             if (isset(Config::get('TABLES')[$table]['fk']) === true) {
               foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
-                if (preg_match('/^[a-z]+/', $column) === 1 && isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]]) === true) {
+                // column
+                if (preg_match('/^[a-z].+$/', $column) === 1) {
                   // we need to *preserve* depth so other
                   // FK rules get a chance to do their thing with depth
                   $d = $depth - 1;
-                  $row[$column] = Moedoo::FK($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]], $d, Moedoo::$CACHE_MAP);
+
+                  if (is_numeric($row[$column]) === false) { // reference has been cached and FK-ed
+                    $row[$column] = $row[$column];
+                  } else if (isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]]) === true) { // reference has been cached
+                    $row[$column] = Moedoo::FK($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]], $d, Moedoo::$CACHE_MAP);
+                  } else {
+                    $columns = Moedoo::buildReturn($referenceRule['table']);
+                    $query = "SELECT {$columns} FROM {$referenceRule['table']} WHERE {$referenceRule['references']} = {$row[$column]};";
+
+                    try {
+                      $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
+
+                      // reference no longer exits
+                      if (count($includeRows) === 0) {
+                        // setting cache to null...
+                        Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]] = null;
+                      } else {
+                        $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
+                        $includeRows[0] = Moedoo::FK($referenceRule['table'], $includeRows[0], $d, Moedoo::$CACHE_MAP);
+                        // setting cache to the first row...
+                        Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]] = $includeRows[0];
+                        $row[$column] = $includeRows[0];
+                      }
+                    } catch (Exception $e) {
+                      throw new Exception($e->getMessage(), 1);
+                    }
+                  }
                 }
 
+                // [column]
                 else if (preg_match('/^\[.+\]$/', $column) === 1) {
                   $column = trim($column, '[]');
                   $fkMapped = [];
                   foreach ($row[$column] as $j => $fkId) {
-                    if (isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
+                    if (is_numeric($fkId) === false) { // referenced and FK-ed
+                      array_push($fkMapped, $fkId);
+                    } else if (isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
                       $d = $depth - 1;
                       array_push($fkMapped, Moedoo::FK($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId], $d, Moedoo::$CACHE_MAP));
                     }
@@ -181,6 +211,7 @@
                   $row[$column] = $fkMapped;
                 }
 
+                // {column}
                 else if(preg_match('/^\{.+\}$/', $column) === 1) {
                   $column = trim($column, '{}');
                   $row[Config::get('REFERENCE_KEY')][$column] = [];
