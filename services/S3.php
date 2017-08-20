@@ -6,8 +6,8 @@
         $filePath = Config::get('S3_UPLOAD_DIR') .'/'. $file;
 
         if (file_exists($filePath) === true) {
-          $mime = Rock::MIMEIsAllowed($filePath);
           $requestHeaders = Rock::getHeaders();
+          $mime = Rock::MIMEIsAllowed($filePath);
           $origin = array_key_exists('Origin', $requestHeaders) === true ? $requestHeaders['Origin'] : '*';
           $originStripped = preg_replace('/https?:\/\/|www\./', '', $origin);
 

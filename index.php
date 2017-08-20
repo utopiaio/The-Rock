@@ -23,7 +23,7 @@
     $r->addRoute('POST', Config::get('ROOT_URL').'/auth', 'auth');
 
     $r->addRoute('GET', Config::get('ROOT_URL').'/all', 'all');
-    $r->addRoute('GET', Config::get('ROOT_URL').'/graph/{ql:\[.{0,}\]}', 'graph');
+    $r->addRoute('GET', Config::get('ROOT_URL').'/graph/{ql:\[.*\]}', 'graph');
 
     $r->addRoute('GET', Config::get('ROOT_URL').'/@S3/{filePath:.+}', 'S3');
     $r->addRoute('DELETE', Config::get('ROOT_URL').'/@S3/{filePath:.+}', 'S3');
