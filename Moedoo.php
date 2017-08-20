@@ -427,6 +427,7 @@
      * creates SQLite resource
      *
      * @param  string $path file path for the SQLite file
+     * @param  number $busyTimeout
      * @return db resource
      */
     public static function db($path, $busyTimeout) {
