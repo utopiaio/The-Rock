@@ -1,6 +1,6 @@
 <?php
   $__REST__['REST'] = function ($routeInfo) {
-    $table = $routeInfo[2]['table'];
+    $table = strtolower($routeInfo[2]['table']);
     $depth = array_key_exists('depth', Config::get('TABLES')[$table]) === true ? Config::get('TABLES')[$table]['depth'] : Config::get('DEFAULT_DEPTH');
     $id = array_key_exists('id', $routeInfo[2]) === true ? $routeInfo[2]['id'] : -1;
     $count = array_key_exists('count', $routeInfo[2]);

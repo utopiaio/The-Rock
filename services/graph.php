@@ -4,7 +4,7 @@
     $authForbiddenRequests = Config::get('FORBIDDEN_REQUESTS')['GET'];
     $user = Rock::hasValidToken();
     $ql = trim($routeInfo[2]['ql'], '[]');
-    $ql = preg_split('/\,/', $ql);
+    $ql = preg_split('/\,/', strtolower($ql));
     $return = [];
 
     foreach ($ql as $key => $table) {
@@ -32,7 +32,7 @@
           }
 
           // user has valid permission
-          elseif(Rock::hasPermission($user, "user_group_has_permission_read_{$table}") === true) {
+          else if(Rock::hasPermission($user, "user_group_has_permission_read_{$table}") === true) {
             $return[$table] = Moedoo::select($table, null, null, $depth);
           }
 
