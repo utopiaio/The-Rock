@@ -36,6 +36,12 @@
 
     /**
      * MAPPER - recursive builder for `CACHE_BUILDER`
+     * goes through the $table's `fk` rules according to depth and builds
+     * [tableName => tableId] for `CACHE_BUILDER` to build
+     *
+     * Mapped FK rule types:
+     * [col]
+     * {col}
      *
      * @param String $table
      * @param Integer &$depth
@@ -44,7 +50,7 @@
     public static function MAPPER($table, &$depth, &$MAPPER) {
       if ($depth-- > 0 && isset(Config::get('TABLES')[$table]['fk']) === true) {
         foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
-          if (preg_match('/^\[.+\]$/', $column) === 1 || preg_match('/^[a-z]+/', $column) === 1) {
+          if (preg_match('/^\[.+\]$/', $column) === 1) {
             $MAPPER[$referenceRule['table']] = $referenceRule['references'];
             $illBeBack = $depth;
             Moedoo::MAPPER($referenceRule['table'], $depth, $MAPPER);
