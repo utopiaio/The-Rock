@@ -4,19 +4,19 @@
 REST on a budget.
 
 ### Requirements
-As it's *SPECIFICALLY* designed to work on shared hosting all you need is
+As it's **specifically** designed to work on shared hosting all you need is
 - PHP5.4+
 
 ### The kitchen sink
 Three musketeers `Util`, `Moedoo` and `Rock` form `The Rock`
 - Util: utility functions
-- Moedoo: basic SQLite _engine_ (for PostgreSQL version checkout the [pg](https://github.com/utopiaio/The-Rock/tree/pg)`pg` branch)
+- Moedoo: basic SQLite _engine_ (for PostgreSQL version checkout the [pg](https://github.com/utopiaio/The-Rock/tree/pg) branch)
 - Rock: ...can you smell what the rock is cooking
 
 #### Util
 ```php
 Util::randomString($length) // returns a random string with length of `$length`
-Util::toArray($body) // returns an associative array of a VALID body string
+Util::toArray($body) // returns an associative array of a valid body string
 ```
 
 #### Moedoo
