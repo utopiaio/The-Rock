@@ -8,9 +8,11 @@
     public static function authenticated($method, $table) {
       $requestHeaders = Rock::getHeaders();
 
-      if (array_key_exists(Config::get('JWT_HEADER'), $requestHeaders) === true) {
+      if (array_key_exists(Config::get('JWT_HEADER'), $requestHeaders) === true || isset($_GET[Config::get('JWT_HEADER')]) === true) {
+        $token = isset($requestHeaders[Config::get('JWT_HEADER')]) ? $requestHeaders[Config::get('JWT_HEADER')] : $_GET[Config::get('JWT_HEADER')];
+
         try {
-          $decoded = (array)Firebase\JWT\JWT::decode($requestHeaders[Config::get('JWT_HEADER')], Config::get('JWT_KEY'), [Config::get('JWT_ALGORITHM')]);
+          $decoded = (array)Firebase\JWT\JWT::decode($token, Config::get('JWT_KEY'), [Config::get('JWT_ALGORITHM')]);
         } catch (Exception $e) {
           Rock::halt(401, 'invalid authorization token');
         }
@@ -68,7 +70,7 @@
       }
 
       elseif (in_array($table, Config::get('AUTH_REQUESTS')[$method]) === true) {
-        Rock::halt(401, 'missing authentication header `'. Config::get('JWT_HEADER') .'`');
+        Rock::halt(401, 'missing authentication header / parameter `'. Config::get('JWT_HEADER') .'`');
       }
     }
 
