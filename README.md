@@ -1,32 +1,29 @@
 ![The Rock](https://raw.githubusercontent.com/utopiaio/The-Rock/master/__S3__/TheRock.png "The Rock")
 
 # The Rock
-A set of static helper functions added on top of [FastRoute](https://github.com/nikic/FastRoute) that make my 9-5 life easy.
-
-Most of the REST API is controlled via `config.php` --- I'll try to make a wiki page.
+REST on a budget.
 
 ### Requirements
-As it's *SPECIFICALLY* designed to work on shared hosting all you need is
+As it's **specifically** designed to work on shared hosting all you need is
 - PHP5.4+
-- PG database 8+
 
 ### The kitchen sink
 Three musketeers `Util`, `Moedoo` and `Rock` form `The Rock`
 - Util: utility functions
-- Moedoo: basic PG DB "engine"
+- Moedoo: basic SQLite _engine_ (for PostgreSQL version checkout the [pg](https://github.com/utopiaio/The-Rock/tree/pg) branch)
 - Rock: ...can you smell what the rock is cooking
 
 #### Util
 ```php
 Util::randomString($length) // returns a random string with length of `$length`
-Util::toArray($body) // returns an associative array of a VALID body string
+Util::toArray($body) // returns an associative array of a valid body string
 ```
 
 #### Moedoo
 ```php
 Moedoo::cast($table, $rows) // returns appropriately casted values
-Moedoo::db($host, $port, $user, $password, $dbname) // returns db resource
-Moedoo::search($table, $q, $depth) // perform full-text search on table
+Moedoo::db($path, $busyTimeout) // returns db resource
+Moedoo::search($table, $q, $depth) // performs wild-card search on table
 Moedoo::select($table, $and, $or, $depth, $limit, $offset) // performs `select`
 Moedoo::insert($table, $data, $depth) // performs `insert`
 Moedoo::update($table, $data, $id, $depth) // performs `update`
@@ -52,9 +49,9 @@ Rock::getUrl() // returns URL
 - Clone the app
 - Run `$ composer install`
 - Under `db` dump the database
-- Inside `config.php`, configure `ROOT_URL` (line 23), if the app lives in the root directory of from where it's going be served leave it empty. If the app lives inside another folder, say,`localhost:8080/rock/` then `ROOT_URL` becomes `/rock`
-- Open `config.php`, configure the database, line 43-47
-- Fire up your browser and hit `PathToRock/s3` --- it should return a list of files
+- Inside `config.php`, configure `ROOT_URL` (line 22), if the app lives in the root directory of from where it's going be served leave it empty. If the app lives inside another folder, say,`localhost:8080/rock/` then `ROOT_URL` becomes `/rock`
+- Open `config.php`, configure the database, line 42-43
+- Fire up your browser and hit `PathToRock/s3` for list of files
 
 There you have it, `The Rock` should be running. You can get a pretty good understanding of what `The Rock` is trying to achieve by looking at the `config.php` file
 
@@ -64,14 +61,15 @@ There you have it, `The Rock` should be running. You can get a pretty good under
 - `POST /{tableName}` saves data
 - `PATCH /{tableName}/id` updates data
 - `DELETE /{tableName}/id` deletes data
+- `GET /{tableName}/count` return number of records
+- `GET /@S3/{fileName}` returns file
+- `DELETE /@S3/{fileName}` delete file
+- `POST /@S3/` save file
 
 ### Authentication
 The Rock provides stateless, tailored authentication (see `user_group` table for more details). It uses JWT for authentication.
 
-Using [Httpie](https://github.com/jkbrzt/httpie) `$ http POST http://PathToRock/auth username=moe password=moe@23`
-
-### Why PHP
-I don't have a choice, PHP is the only thing I can afford to host on a "production" scale. I'll port the *framework* to Node.js (on-top of Express or Koa), something similar probably exits but it'll be a learning experience for me.
+Using [Httpie](https://github.com/jkbrzt/httpie) `$ http POST http://PathToRock/auth username=utopiaio password=utopiaio`
 
 ### License
 MIT
