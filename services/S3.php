@@ -23,7 +23,7 @@
           header('HTTP/1.1 200 OK');
           // JSON files are read as text files --- we're making sure json are read accordingly
           strtolower(substr($file, strrpos($file, '.') + 1)) === 'json' ?
-            header('Content-Type: application/json;charset=utf-8') :
+            header('Content-Type: application/json') :
             header("Content-Type: {$mime}");
 
           if ($mime === false) {

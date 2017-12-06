@@ -6,38 +6,42 @@
     // this will sacrifice the memory in-order to gain much needed performance boost
     // on larger depth requests (especially with queries)
     private static $CACHE_MAP = [];
+    private static $DEPTH = []; // ['tableName' => 'depth']
+    private static $included = []; // ['tableName' => ['id' => 'row']]
     private static $db = null;
 
+
+
     /**
-     * cache builder
-     * [ [table] => [ columnId => row ] ]
-     *
+     * goes through tables 'fk' rules and builds ['tableName' => 'depth']
+     * which will be used for consistent model mapping
      * @param String $table
-     * @param String $columnId
-     * @param Array $CACHE_MAP
+     * @param Integer &$depth
      * @return Array
      */
-    public static function CACHE_BUILDER($table, $columnId, &$CACHE_MAP) {
-      if (isset($CACHE_MAP[$table]) === false) {
-        $CACHE_MAP[$table] = [];
+    public static function DEPTH_BUILDER($table, &$depth) {
+      if ($depth-- > 0 && isset(Config::get('TABLES')[$table]['fk']) === true) {
+        foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
+          if (isset(Moedoo::$DEPTH[$referenceRule['table']]) === false) {
+            Moedoo::$DEPTH[$referenceRule['table']] = $depth;
+          } elseif (isset(Moedoo::$DEPTH[$referenceRule['table']]) === true &&  Moedoo::$DEPTH[$referenceRule['table']] < $depth) {
+            Moedoo::$DEPTH[$referenceRule['table']] = $depth;
+          }
 
-        $columns = Moedoo::buildReturn($table);
-        $query = "SELECT {$columns} FROM {$table};";
-        $includeRows = Moedoo::executeQuery($table, $query, []);
-        $includeRows = Moedoo::cast($table, $includeRows);
-
-        foreach ($includeRows as $index => $includeRow) {
-          $CACHE_MAP[$table][$includeRow[$columnId]] = $includeRow;
+          $d = $depth;
+          Moedoo::DEPTH_BUILDER($referenceRule['table'], $d);
         }
       }
 
-      return $CACHE_MAP;
+      return Moedoo::$DEPTH;
     }
+
+
 
     /**
      * MAPPER - recursive builder for `CACHE_BUILDER`
      * goes through the $table's `fk` rules according to depth and builds
-     * [tableName => tableId] for `CACHE_BUILDER` to build
+     * [tableName => tableIdColumn] for `CACHE_BUILDER` to build
      *
      * Mapped FK rule types:
      * [col]
@@ -45,27 +49,115 @@
      *
      * @param String $table
      * @param Integer &$depth
-     * @param Array &$MAPPER
+     * @return Array $MAPPER
      */
-    public static function MAPPER($table, &$depth, &$MAPPER) {
+    public static function MAPPER($table, &$depth) {
       if ($depth-- > 0 && isset(Config::get('TABLES')[$table]['fk']) === true) {
         foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
           if (preg_match('/^\[.+\]$/', $column) === 1) {
-            $MAPPER[$referenceRule['table']] = $referenceRule['references'];
-            $illBeBack = $depth;
-            Moedoo::MAPPER($referenceRule['table'], $depth, $MAPPER);
-            $depth = $illBeBack; // this makes sure every rules gets the same depth on a go
-          } else if (preg_match('/^\{.+\}$/', $column) === 1) {
-            $MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
-            $illBeBack = $depth;
-            Moedoo::MAPPER($referenceRule['table'], $depth, $MAPPER);
-            $depth = $illBeBack;
+            Moedoo::$MAPPER[$referenceRule['table']] = $referenceRule['references'];
+            $d = $depth;
+            Moedoo::MAPPER($referenceRule['table'], $d);
+          } elseif (preg_match('/^\{.+\}$/', $column) === 1) {
+            Moedoo::$MAPPER[$referenceRule['table']] = Config::get('TABLES')[$referenceRule['table']]['pk'];
+            $d = $depth;
+            Moedoo::MAPPER($referenceRule['table'], $d);
           }
         }
       }
 
-      return $MAPPER;
+      return Moedoo::$MAPPER;
     }
+
+
+
+    /**
+     * cache builder [with depth zero]
+     * [ [table] => [ columnId => row ] ]
+     *
+     * @param String $table
+     * @param String $columnId
+     * @return Array $CACHE_MAP
+     */
+    public static function CACHE_BUILDER($table, $columnId) {
+      if (isset(Moedoo::$CACHE_MAP[$table]) === false) {
+        Moedoo::$CACHE_MAP[$table] = [];
+
+        $columns = Moedoo::buildReturn($table);
+        $query = "SELECT $columns FROM $table;";
+        $includeRows = Moedoo::executeQuery($table, $query, []);
+        $includeRows = Moedoo::cast($table, $includeRows);
+
+        foreach ($includeRows as $index => $includeRow) {
+          Moedoo::$CACHE_MAP[$table][$includeRow[$columnId]] = $includeRow;
+        }
+      }
+
+      return Moedoo::$CACHE_MAP;
+    }
+
+    /**
+     * @param Boolean $keepAuth
+     * @return Array
+     */
+    public static function included($keepAuth = false) {
+      if ($keepAuth === false) {
+        $included = Moedoo::$included;
+        unset($included['user']);
+        unset($included['user_group']);
+        return $included;
+      }
+
+      return Moedoo::$included;
+    }
+
+
+
+    /**
+     * returns $rFK's {column} references
+     *
+     * @param String $tFK
+     * @param Array $rFK
+     * @return Array Enhanced $rFK
+     */
+    private static function FKRelationship($tFK, $rFK) {
+      if (isset(Config::get('TABLES')[$tFK]['fk']) === true) {
+        foreach (Config::get('TABLES')[$tFK]['fk'] as $column => $referenceRule) {
+          if (isset(Moedoo::$CACHE_MAP[$referenceRule['table']]) === false) {
+            Moedoo::$CACHE_MAP[$referenceRule['table']] = [];
+          }
+
+          if (preg_match('/^\{.+\}$/', $column) === 1) {
+            //-> {column}
+            $column = trim($column, '{}');
+            $rFK[Config::get('RELATIONSHIP_KEY')][$column] = [];
+            $pk = Config::get('TABLES')[$referenceRule['table']]['pk'];
+
+            if ((isset(Config::get('TABLES')[$referenceRule['table']]['[int]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) || (isset(Config::get('TABLES')[$referenceRule['table']]['[string]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[string]']))) {
+              //-> reverse fk []
+              foreach (Moedoo::$CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                if (in_array($rFK[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
+                  array_push($rFK[Config::get('RELATIONSHIP_KEY')][$column], $rRow[$pk]);
+                  Moedoo::$included[$referenceRule['table']][$rRow[$pk]] = Moedoo::FKRelationship($referenceRule['table'], $rRow);
+                }
+              }
+            } else {
+              //-> single reverse fk
+              foreach (Moedoo::$CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                if ($rRow[$referenceRule['referencing_column']] === $rFK[$referenceRule['referenced_by']]) {
+                  array_push($rFK[Config::get('RELATIONSHIP_KEY')][$column], $rRow[$pk]);
+                  Moedoo::$included[$referenceRule['table']][$rRow[$pk]] = Moedoo::FKRelationship($referenceRule['table'], $rRow);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return $rFK;
+    }
+
+
 
     /**
      * builds fk iterating over CACHE_MAP
@@ -73,59 +165,100 @@
      * @param String $tFK
      * @param Array $rFK
      * @param Integer &$dFK
-     * @param Array $CACHE_MAP
      * @return Array
      */
-    public static function FK($tFK, $rFK, &$dFK, $CACHE_MAP) {
+    public static function FK($tFK, $rFK, &$dFK) {
       if ($dFK-- >= 0) {
         if (isset(Config::get('TABLES')[$tFK]['fk']) === true) {
           foreach (Config::get('TABLES')[$tFK]['fk'] as $column => $referenceRule) {
-            if (isset($CACHE_MAP[$referenceRule['table']]) === false) { // cache safe
-              // ANC - this shouldn't happen - but it's happening
+            if (isset(Moedoo::$CACHE_MAP[$referenceRule['table']]) === false) {
+              //-> the column table to be checked in cache is not of [table] or {table}
+              //-> `$CACHE_MAP` will be built per request
+              // booting `$CACHE_MAP` table...
+              Moedoo::$CACHE_MAP[$referenceRule['table']] = [];
             }
 
-            // column
-            else if (preg_match('/^[a-z].+/', $column) === 1 && isset($CACHE_MAP[$referenceRule['table']][$rFK[$column]]) === true) {
-              $d = $dFK;
-              $rFK[$column] = Moedoo::FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$rFK[$column]], $d, $CACHE_MAP);
-            }
+            if (preg_match('/^[a-z].+/', $column) === 1 && isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$rFK[$column]]) === false) {
+              //-> `$column` not found in `$CACHE_MAP`, adding...
+              $columns = Moedoo::buildReturn($referenceRule['table']);
+              $query = "SELECT $columns FROM {$referenceRule['table']} WHERE {$referenceRule['references']} = :1;";
 
-            // [column]
-            else if (preg_match('/^\[.+\]$/', $column) === 1) {
+              try {
+                $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, [$rFK[$column]]);
+
+                if (count($includeRows) === 0) {
+                  //-> reference no longer exits
+                  // setting cache to null...
+                  Moedoo::$CACHE_MAP[$referenceRule['table']][$rFK[$column]] = null;
+                } else {
+                  $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
+                  // setting cache to the first row...
+                  Moedoo::$CACHE_MAP[$referenceRule['table']][$rFK[$column]] = $includeRows[0];
+
+                  if ($dFK === -1 && Moedoo::$DEPTH[$referenceRule['table']] > 0) {
+                    Moedoo::$included[$referenceRule['table']][$rFK[$column]] = Moedoo::FKRelationship($referenceRule['table'], $includeRows[0]);
+                  } else {
+                    $d = $dFK;
+                    Moedoo::$included[$referenceRule['table']][$rFK[$column]] = Moedoo::FK($referenceRule['table'], $includeRows[0], $d);
+                  }
+                }
+              } catch (Exception $e) {
+                throw new Exception($e->getMessage(), 1);
+              }
+            } elseif (preg_match('/^[a-z].+/', $column) === 1 && isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$rFK[$column]]) === true && Moedoo::$CACHE_MAP[$referenceRule['table']][$rFK[$column]] !== null) {
+              //-> column - cached
+              if ($dFK === -1 && Moedoo::$DEPTH[$referenceRule['table']] > 0) {
+                Moedoo::$included[$referenceRule['table']][$rFK[$column]] = Moedoo::FKRelationship($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$rFK[$column]]);
+              } else {
+                $d = $dFK;
+                Moedoo::$included[$referenceRule['table']][$rFK[$column]] = Moedoo::FK($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$rFK[$column]], $d);
+              }
+            } elseif (preg_match('/^\[.+\]$/', $column) === 1) {
+              //-> [column]
               $column = trim($column, '[]');
-              $fkMapped = [];
 
               foreach ($rFK[$column] as $j => $fkId) {
-                if (isset($CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
-                  $d = $dFK;
-                  array_push($fkMapped, Moedoo::FK($referenceRule['table'], $CACHE_MAP[$referenceRule['table']][$fkId], $d, $CACHE_MAP));
-                }
-              }
-
-              $rFK[$column] = $fkMapped;
-            }
-
-            // {column}
-            else if (preg_match('/^\{.+\}$/', $column) === 1) {
-              $column = trim($column, '{}');
-              $rFK[Config::get('REFERENCE_KEY')][$column] = [];
-
-              // reverse fk []
-              if (isset(Config::get('TABLES')[$referenceRule['table']]['[int]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
-                foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
-                  if (in_array($rFK[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
+                if (isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId]) === true && Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId] !== null) {
+                  if ($dFK === -1 && Moedoo::$DEPTH[$referenceRule['table']] > 0) {
+                    Moedoo::$included[$referenceRule['table']][$fkId] = Moedoo::FKRelationship($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId]);
+                  } else {
                     $d = $dFK;
-                    array_push($rFK[Config::get('REFERENCE_KEY')][$column], Moedoo::FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
+                    Moedoo::$included[$referenceRule['table']][$fkId] = Moedoo::FK($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId], $d);
                   }
                 }
               }
+            } elseif (preg_match('/^\{.+\}$/', $column) === 1) {
+              //-> {column}
+              $column = trim($column, '{}');
+              $rFK[Config::get('RELATIONSHIP_KEY')][$column] = [];
+              $pk = Config::get('TABLES')[$referenceRule['table']]['pk'];
 
-              // single reverse fk
-              else if (isset(Config::get('TABLES')[$referenceRule['table']]['int']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
-                foreach ($CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+              if ((isset(Config::get('TABLES')[$referenceRule['table']]['[int]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) || (isset(Config::get('TABLES')[$referenceRule['table']]['[string]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[string]']))) {
+                //-> reverse fk []
+                foreach (Moedoo::$CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                  if (in_array($rFK[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
+                    array_push($rFK[Config::get('RELATIONSHIP_KEY')][$column], $rRow[$pk]);
+
+                    if ($dFK === -1 && Moedoo::$DEPTH[$referenceRule['table']] > 0) {
+                      Moedoo::$included[$referenceRule['table']][$rRow[$pk]] = Moedoo::FKRelationship($referenceRule['table'], $rRow);
+                    } else {
+                      $d = $dFK;
+                      Moedoo::$included[$referenceRule['table']][$rRow[$pk]] = Moedoo::FK($referenceRule['table'], $rRow, $d);
+                    }
+                  }
+                }
+              } else {
+                //-> single reverse fk
+                foreach (Moedoo::$CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
                   if ($rRow[$referenceRule['referencing_column']] === $rFK[$referenceRule['referenced_by']]) {
-                    $d = $dFK;
-                    array_push($rFK[Config::get('REFERENCE_KEY')][$column], Moedoo::FK($referenceRule['table'], $rRow, $d, $CACHE_MAP));
+                    array_push($rFK[Config::get('RELATIONSHIP_KEY')][$column], $rRow[$pk]);
+
+                    if ($dFK === -1 && Moedoo::$DEPTH[$referenceRule['table']] > 0) {
+                      Moedoo::$included[$referenceRule['table']][$rRow[$pk]] = Moedoo::FKRelationship($referenceRule['table'], $rRow);
+                    } else {
+                      $d = $dFK;
+                      Moedoo::$included[$referenceRule['table']][$rRow[$pk]] = Moedoo::FK($referenceRule['table'], $rRow, $d);
+                    }
                   }
                 }
               }
@@ -137,6 +270,8 @@
       return $rFK;
     }
 
+
+
     /**
      * returns a FK reference
      *
@@ -145,94 +280,93 @@
      * @param array $depth
      * @return array
      */
-    public static function referenceFk($table, $rows, &$depth = 1) {
-      // fk rules exist for the table
+    public static function referenceFK($table, $rows, &$depth = 1) {
       if (isset(Config::get('TABLES')[$table]['fk']) === true) {
+        //-> fk rules exist for the table
         if ($depth > 0) {
-          Moedoo::MAPPER($table, $depth, Moedoo::$MAPPER);
+          $d = $depth;
+          Moedoo::MAPPER($table, $d);
+          $d = $depth;
+          Moedoo::DEPTH_BUILDER($table, $d);
 
           // passing to cache builder --------------------------------------------------------------
           foreach (Moedoo::$MAPPER as $t => $id) {
-            Moedoo::CACHE_BUILDER($t, $id, Moedoo::$CACHE_MAP);
+            Moedoo::CACHE_BUILDER($t, $id);
           }
           // ./ passing to cache builder -----------------------------------------------------------
 
           // mapping -------------------------------------------------------------------------------
           foreach ($rows as $i => &$row) {
-            if (isset(Config::get('TABLES')[$table]['fk']) === true) {
-              foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
-                // column
-                if (preg_match('/^[a-z].+$/', $column) === 1) {
-                  // we need to *preserve* depth so other
-                  // FK rules get a chance to do their thing with depth
-                  $d = $depth - 1;
+            foreach (Config::get('TABLES')[$table]['fk'] as $column => $referenceRule) {
+              if (isset(Moedoo::$included[$referenceRule['table']]) === false) {
+                //-> initiating $included...
+                Moedoo::$included[$referenceRule['table']] = [];
+              }
 
-                  if (is_numeric($row[$column]) === false) { // reference has been cached and FK-ed
-                    $row[$column] = $row[$column];
-                  } else if (isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]]) === true) { // reference has been cached
-                    $row[$column] = Moedoo::FK($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]], $d, Moedoo::$CACHE_MAP);
-                  } else {
-                    $columns = Moedoo::buildReturn($referenceRule['table']);
-                    $query = "SELECT {$columns} FROM {$referenceRule['table']} WHERE {$referenceRule['references']} = {$row[$column]};";
+              if (preg_match('/^[a-z].+$/', $column) === 1) {
+                //-> column
+                // we need to *preserve* depth so other
+                // FK rules get a chance to do their thing with depth
+                $d = Moedoo::$DEPTH[$referenceRule['table']] - 1;
 
-                    try {
-                      $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, []);
+                if (isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]]) === true) {
+                  //-> reference has been cached
+                  Moedoo::$included[$referenceRule['table']][$row[$column]] = Moedoo::FK($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]], $d);
+                } else {
+                  //-> column has not been cached
+                  $columns = Moedoo::buildReturn($referenceRule['table']);
+                  $query = "SELECT $columns FROM {$referenceRule['table']} WHERE {$referenceRule['references']} = :1;";
 
-                      // reference no longer exits
-                      if (count($includeRows) === 0) {
-                        // setting cache to null...
-                        Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]] = null;
-                      } else {
-                        $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
-                        $includeRows[0] = Moedoo::FK($referenceRule['table'], $includeRows[0], $d, Moedoo::$CACHE_MAP);
-                        // setting cache to the first row...
-                        Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]] = $includeRows[0];
-                        $row[$column] = $includeRows[0];
-                      }
-                    } catch (Exception $e) {
-                      throw new Exception($e->getMessage(), 1);
+                  try {
+                    $includeRows = Moedoo::executeQuery($referenceRule['table'], $query, [$row[$column]]);
+
+                    if (count($includeRows) === 0) {
+                      //-> reference no longer exits
+                      // setting cache to null...
+                      Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]] = null;
+                    } else {
+                      $includeRows = Moedoo::cast($referenceRule['table'], $includeRows);
+                      // setting cache to the first row...
+                      Moedoo::$CACHE_MAP[$referenceRule['table']][$row[$column]] = $includeRows[0];
+                      Moedoo::$included[$referenceRule['table']][$row[$column]] = Moedoo::FK($referenceRule['table'], $includeRows[0], $d);
                     }
+                  } catch (Exception $e) {
+                    throw new Exception($e->getMessage(), 1);
                   }
                 }
+              } elseif (preg_match('/^\[.+\]$/', $column) === 1) {
+                //-> [column]
+                $column = trim($column, '[]');
 
-                // [column]
-                else if (preg_match('/^\[.+\]$/', $column) === 1) {
-                  $column = trim($column, '[]');
-                  $fkMapped = [];
-                  foreach ($row[$column] as $j => $fkId) {
-                    if (is_numeric($fkId) === false) { // referenced and FK-ed
-                      array_push($fkMapped, $fkId);
-                    } else if (isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
-                      $d = $depth - 1;
-                      array_push($fkMapped, Moedoo::FK($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId], $d, Moedoo::$CACHE_MAP));
-                    }
+                foreach ($row[$column] as $j => $fkId) {
+                  if (isset(Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId]) === true) {
+                    $d = Moedoo::$DEPTH[$referenceRule['table']] - 1;
+                    Moedoo::$included[$referenceRule['table']][$fkId] = Moedoo::FK($referenceRule['table'], Moedoo::$CACHE_MAP[$referenceRule['table']][$fkId], $d);
                   }
-
-                  $row[$column] = $fkMapped;
                 }
+              } elseif (preg_match('/^\{.+\}$/', $column) === 1) {
+                //-> {column}
+                $column = trim($column, '{}');
+                $row[Config::get('RELATIONSHIP_KEY')][$column] = [];
+                $pk = Config::get('TABLES')[$referenceRule['table']]['pk'];
 
-                // {column}
-                else if(preg_match('/^\{.+\}$/', $column) === 1) {
-                  $column = trim($column, '{}');
-                  $row[Config::get('REFERENCE_KEY')][$column] = [];
-
-                  // reverse fk []
-                  if (isset(Config::get('TABLES')[$referenceRule['table']]['[int]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) {
-                    foreach (Moedoo::$CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
-                      if (in_array($row[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
-                        $d = $depth - 1;
-                        array_push($row[Config::get('REFERENCE_KEY')][$column], Moedoo::FK($referenceRule['table'], $rRow, $d, Moedoo::$CACHE_MAP));
-                      }
+                if ((isset(Config::get('TABLES')[$referenceRule['table']]['[int]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[int]'])) || (isset(Config::get('TABLES')[$referenceRule['table']]['[string]']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['[string]']))) {
+                  //-> reverse fk []
+                  foreach (Moedoo::$CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                    if (in_array($row[$referenceRule['referenced_by']], $rRow[$referenceRule['referencing_column']]) === true) {
+                      array_push($row[Config::get('RELATIONSHIP_KEY')][$column], $rRow[$pk]);
+                      $d = Moedoo::$DEPTH[$referenceRule['table']] - 1;
+                      Moedoo::$included[$referenceRule['table']][$rRow[$pk]] = Moedoo::FK($referenceRule['table'], $rRow, $d);
                     }
                   }
-
-                  // single reverse fk
-                  else if (isset(Config::get('TABLES')[$referenceRule['table']]['int']) && in_array($referenceRule['referencing_column'], Config::get('TABLES')[$referenceRule['table']]['int'])) {
-                    foreach (Moedoo::$CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
-                      if ($rRow[$referenceRule['referencing_column']] === $row[$referenceRule['referenced_by']]) {
-                        $d = $depth - 1;
-                        array_push($row[Config::get('REFERENCE_KEY')][$column], Moedoo::FK($referenceRule['table'], $rRow, $d, Moedoo::$CACHE_MAP));
-                      }
+                } else {
+                  //-> single reverse fk
+                  foreach (Moedoo::$CACHE_MAP[$referenceRule['table']] as $id => $rRow) {
+                    if ($rRow[$referenceRule['referencing_column']] === $row[$referenceRule['referenced_by']]) {
+                      array_push($row[Config::get('RELATIONSHIP_KEY')][$column], $rRow[$pk]);
+                      //-> include check
+                      $d = Moedoo::$DEPTH[$referenceRule['table']] - 1;
+                      Moedoo::$included[$referenceRule['table']][$rRow[$pk]] = Moedoo::FK($referenceRule['table'], $rRow, $d);
                     }
                   }
                 }
@@ -247,6 +381,7 @@
     }
 
 
+
     /**
      * builds a returning table syntax
      *
@@ -259,11 +394,12 @@
       $build = '';
 
       foreach (Config::get('TABLES')[$table]['returning'] as $index => $column) {
-        $build .= "{$column}, ";
+        $build .= "$column, ";
       }
 
       return substr($build, 0, -2);
     }
+
 
 
     /**
@@ -285,13 +421,14 @@
         }
 
         if ((array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true) ||
-            (array_key_exists('[float]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[float]']) === true)) {
+            (array_key_exists('[string]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[string]']) === true)) {
           $value = '{'. implode(',', $value) .'}';
         }
       }
 
       return $data;
     }
+
 
 
     /**
@@ -308,7 +445,8 @@
       $CAST_FLAG = [
         'JSON' => [],
         'bool' => [],
-        '[int]' => []
+        '[int]' => [],
+        '[string]' => [],
       ];
 
       if (count($rows) > 0 && isset($rows[0][Config::get('TABLES')[$table]['pk']]) === true) {
@@ -316,26 +454,28 @@
           $CAST_FLAG['JSON'][$column] = array_key_exists('JSON', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['JSON']) === true;
           $CAST_FLAG['bool'][$column] = array_key_exists('bool', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['bool']) === true;
           $CAST_FLAG['[int]'][$column] = array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true;
+          $CAST_FLAG['[string]'][$column] = array_key_exists('[string]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[string]']) === true;
         }
 
         foreach ($rows as $index => &$row) {
           foreach ($row as $column => &$value) {
             if ($CAST_FLAG['JSON'][$column] === true) {
-              $value = json_decode($value);
-            }
-
-            else if ($CAST_FLAG['bool'][$column] === true) {
+              $value = json_decode($value, true);
+            } elseif ($CAST_FLAG['bool'][$column] === true) {
               $value = $value === 'TRUE' ? true : false;
-            }
-
-            // for now (and probably forever) we can only work with 1D arrays
-            // since we'll have PG version 8 we can't use JSON :(
-            else if ($CAST_FLAG['[int]'][$column] === true) {
+            } elseif ($CAST_FLAG['[int]'][$column] === true) {
+              //-> for now (and probably forever) we can only work with 1D arrays
+              //-> since we'll have PG version 8 we can't use JSON :(
               $value = trim($value, '{}');
               $value = $value === '' ? [] : explode(',', $value);
               foreach ($value as $index => &$v) {
                 $v = is_numeric($v) === true ? (int)$v : null;
               }
+            } elseif ($CAST_FLAG['[string]'][$column] === true) {
+              //-> for now (and probably forever) we can only work with 1D arrays
+              //-> since we'll have PG version 8 we can't use JSON :(
+              $value = trim($value, '{}');
+              $value = $value === '' ? [] : explode(',', $value);
             }
           }
         }
@@ -343,6 +483,7 @@
 
       return $rows;
     }
+
 
 
     /**
@@ -367,60 +508,37 @@
       $queryDelete = preg_match('/^DELETE/', $query);
 
       if (count($params) > 0) {
-        $statement = $db -> prepare($query);
+        $statement = $db->prepare($query);
 
         for ($i = 0; $i < count($params); $i++) {
           $iPlus1 = $i + 1;
-          $statement -> bindValue("{$iPlus1}", $params[$i]);
+          $statement->bindValue(":$iPlus1", $params[$i]);
         }
 
-        $result = $statement -> execute();
-        $result -> finalize();
+        $result = $statement->execute();
+
+        if (is_bool($result) === false) {
+          $result->finalize();
+        }
       } else {
-        $result = $db -> query($query);
+        $result = $db->query($query);
       }
 
-      if ($result === false) {
-        switch ($db -> lastErrorCode()) {
-          case 787:
-            throw new Exception('request violets foreign key constraint', 3);
-            break;
+      if ($querySelect === 1) {
+        $rows = [];
 
-          case 2067:
-            throw new Exception('request violets duplicate constraint', 2);
-            break;
-
-          default:
-            // we won't be giving detailed error in order "protect" the system
-            if ($querySelect === 1) {
-              throw new Exception("unable to select from table `{$table}`", 1);
-            } else if ($queryInsert === 1) {
-              throw new Exception("unable to save `{$table}`", 1);
-            } else if ($queryUpdate === 1) {
-              throw new Exception("unable to update `{$table}`", 1);
-            } else if ($queryDelete === 1) {
-              throw new Exception("unable to delete record from table `{$table}`", 1);
-            } else {
-              throw new Exception('error processing query', 1);
-            }
-            break;
+        while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+          array_push($rows, $row);
         }
-      } else {
-        if ($querySelect === 1) {
-          $rows = [];
 
-          while ($row = $result -> fetchArray(SQLITE3_ASSOC)) {
-            array_push($rows, $row);
-          }
-
-          return $rows;
-        } else if ($queryInsert === 1) {
-          return $db -> lastInsertRowID();
-        } else if ($queryUpdate === 1 || $queryDelete === 1) {
-          return $db -> changes();
-        }
+        return $rows;
+      } elseif ($queryInsert === 1) {
+        return $db->lastInsertRowID();
+      } elseif ($queryUpdate === 1 || $queryDelete === 1) {
+        return $db->changes();
       }
     }
+
 
 
     /**
@@ -433,11 +551,19 @@
     public static function db($path, $busyTimeout) {
       if (Moedoo::$db === null) {
         Moedoo::$db = new SQLite($path, SQLITE3_OPEN_READWRITE);
-        Moedoo::$db -> busyTimeout($busyTimeout);
+        Moedoo::$db->busyTimeout($busyTimeout);
+        Moedoo::$db->enableExceptions(true);
+
+        // big shout out to:
+        // https://stackoverflow.com/users/2148494/cara
+        // this has to be executed per connection
+        $statement = Moedoo::$db->prepare('PRAGMA foreign_keys = ON;');
+        $statement->execute();
       }
 
       return Moedoo::$db;
     }
+
 
 
     /**
@@ -451,36 +577,31 @@
     public static function search($table, $q, $limit = -1, $depth = 1) {
       $columns = Moedoo::buildReturn($table);
       $q = preg_replace('/ +/', ' ', trim($q));
-      $query = "SELECT {$columns} FROM {$table} WHERE";
+      $query = "SELECT $columns FROM $table WHERE";
       $where = '';
-      $order_by = 'ORDER BY';
 
-      // model doesn't have any full-text fields
-      if (count(Config::get('TABLES')[$table]['search']) === 0) {
-        Rock::halt(400, "table `{$table}` has no searchable fields");
-      }
-
-      else {
+      if (isset(Config::get('TABLES')[$table]['search']) === false || count(Config::get('TABLES')[$table]['search']) === 0) {
+        //-> model doesn't have any "search" fields
+        Rock::halt(400, "table `$table` has no searchable fields");
+      } else {
         $db = Moedoo::db(Config::get('DB_FILE'), Config::get('DB_BUSY_TIMEOUT'));
 
         foreach (Config::get('TABLES')[$table]['search'] as $key => $value) {
-          $where .= "{$value} LIKE '%". $db -> escapeString($q) ."%' OR ";
+          $where .= "$value LIKE '%". $db->escapeString($q) ."%' OR ";
         }
 
         $where = substr($where, 0, -4);
 
-        $limit = "LIMIT {$limit}";
+        $limit = "LIMIT $limit";
 
         try {
-          $rows = Moedoo::executeQuery($table, "{$query} {$where} {$limit};", []);
+          $rows = Moedoo::executeQuery($table, "$query $where $limit;", []);
 
           if (count($rows) === 0) {
             return [];
-          }
-
-          else {
+          } else {
             $rows = Moedoo::cast($table, $rows);
-            $rows = Moedoo::referenceFk($table, $rows, $depth);
+            $rows = Moedoo::referenceFK($table, $rows, $depth);
             return $rows;
           }
         } catch (Exception $e) {
@@ -490,6 +611,7 @@
     }
 
 
+
     /**
      * returns row count on a table
      *
@@ -497,16 +619,14 @@
      * @return integer
      */
     public static function count($table) {
-      $query = 'SELECT count('. Config::get('TABLES')[$table]['pk'] .") as count FROM {$table};";
+      $query = 'SELECT count('. Config::get('TABLES')[$table]['pk'] .") as count FROM $table;";
 
       try {
         $rows = Moedoo::executeQuery($table, $query, []);
 
         if (count($rows) === 0) {
           $count = 0;
-        }
-
-        else {
+        } else {
           $count = (int)$rows[0]['count'];
         }
 
@@ -515,6 +635,7 @@
         throw new Exception($e->getMessage(), 1);
       }
     }
+
 
 
     /**
@@ -530,31 +651,34 @@
      */
     public static function select($table, $and = null, $or = null, &$depth = 1, $limit = -1, $offset = 0) {
       $columns = Moedoo::buildReturn($table);
-      $query = "SELECT {$columns} FROM {$table}";
+      $query = "SELECT $columns FROM $table";
       $params = [];
 
       if ($and === null && $or === null) {
-        $query .= ' ORDER BY '. Config::get('TABLES')[$table]['pk'] .' DESC ';
-      }
-
-      else {
+        $query .= ' ';
+      } else {
         $query .= ' WHERE';
 
         if ($and !== null) {
           $query .= ' (';
 
           foreach ($and as $column => $value) {
-            array_push($params, $value);
-
-            if ((array_key_exists('[bool]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[bool]']) === true) ||
-               (array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true) ||
-               (array_key_exists('[float]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[float]']) === true) ||
-               (array_key_exists('[double]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[double]']) === true) ||
-               (array_key_exists('[JSON]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[JSON]']) === true) ||
-               (array_key_exists('[geometry]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[geometry]']) === true)) {
-              $query .= '$'. count($params) ."=ANY({$column}) AND ";
+            if (array_key_exists('bool', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['bool']) === true) {
+              array_push($params, $value === true ? 'TRUE' : 'FALSE');
+              $query .= "$column = :". count($params) .' AND ';
+            } elseif (array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true) {
+              foreach ($value as $i1 => $v2) {
+                array_push($params, $v2);
+                $query .= "$column = :". count($params) .' AND ';
+              }
+            } elseif (array_key_exists('[string]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[string]']) === true) {
+              foreach ($value as $i1 => $v2) {
+                array_push($params, $v2);
+                $query .= "$column = :". count($params) .' AND ';
+              }
             } else {
-              $query .= "{$column}=$". count($params) .' AND ';
+              array_push($params, $value);
+              $query .= "$column = :". count($params) .' AND ';
             }
           }
 
@@ -570,17 +694,22 @@
           $query .= ' (';
 
           foreach ($or as $column => $value) {
-            array_push($params, $value);
-
-            if ((array_key_exists('[bool]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[bool]']) === true) ||
-               (array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true) ||
-               (array_key_exists('[float]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[float]']) === true) ||
-               (array_key_exists('[double]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[double]']) === true) ||
-               (array_key_exists('[JSON]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[JSON]']) === true) ||
-               (array_key_exists('[geometry]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[geometry]']) === true)) {
-              $query .= '$'. count($params) ."=ANY({$column}) OR ";
+            if (array_key_exists('bool', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['bool']) === true) {
+              array_push($params, $value === true ? 'TRUE' : 'FALSE');
+              $query .= "$column = :". count($params) .' OR ';
+            } elseif (array_key_exists('[int]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[int]']) === true) {
+              foreach ($value as $i1 => $v2) {
+                array_push($params, $v2);
+                $query .= "$column = :". count($params) .' OR ';
+              }
+            } elseif (array_key_exists('[string]', Config::get('TABLES')[$table]) === true && in_array($column, Config::get('TABLES')[$table]['[string]']) === true) {
+              foreach ($value as $i1 => $v2) {
+                array_push($params, $v2);
+                $query .= "$column = :". count($params) .' OR ';
+              }
             } else {
-              $query .= "{$column}=$".count($params).' OR ';
+              array_push($params, $value);
+              $query .= "$column = :".count($params).' OR ';
             }
           }
 
@@ -588,27 +717,26 @@
           $query .= ')';
         }
 
-        $query .= ' ORDER BY '. Config::get('TABLES')[$table]['pk'] .' DESC ';
+        $query .= ' ';
       }
 
-      $query .= "LIMIT {$limit} OFFSET {$offset};";
+      $query .= "ORDER BY _rowid_ DESC LIMIT $limit OFFSET $offset;";
 
       try {
         $rows = Moedoo::executeQuery($table, $query, $params);
 
         if (count($rows) === 0) {
           return [];
-        }
-
-        else {
+        } else {
           $rows = Moedoo::cast($table, $rows);
-          $rows = Moedoo::referenceFk($table, $rows, $depth);
+          $rows = Moedoo::referenceFK($table, $rows, $depth);
           return $rows;
         }
       } catch (Exception $e) {
         throw new Exception($e->getMessage(), 1);
       }
     }
+
 
 
     /**
@@ -620,40 +748,46 @@
      */
     public static function insert($table, $data, $depth = 1) {
       $data = Moedoo::castForSQLite($table, $data);
-      $count = 1;
-      $columns = [];
-      $holders = []; // ${$index}
-      $params = [];
+      $count = 2; // PK will be initialized via `Util::randomString`
+      $columns = [Config::get('TABLES')[$table]['pk']];
+      $holders = [':1']; // :$index
+      $params = [Util::randomString(Config::get('DB_ID_LENGTH'))];
 
       foreach ($data as $column => $value) {
-        array_push($columns, $column);
-        array_push($holders, "\${$count}");
-        array_push($params, $value);
-        $count++;
+        if (in_array($column, $columns) === false) {
+          //-> prevent PK double via `$data` containing PK column name
+          array_push($columns, $column);
+          array_push($holders, ":$count");
+          array_push($params, $value);
+          $count++;
+        }
       }
 
       $columns = implode(', ', $columns);
       $holders = implode(', ', $holders);
       $returning = Moedoo::buildReturn($table);
 
-      $query = "INSERT INTO {$table} ({$columns}) VALUES ({$holders});";
+      $query = "INSERT INTO $table ($columns) VALUES ($holders);";
+
       try {
+        // `Moedoo::executeQuery` return last inserted ID, internally referred as `RowID` or `OID`
         $rowId = Moedoo::executeQuery($table, $query, $params);
 
         // fetching the last inserted row
-        $rows = Moedoo::select($table, [Config::get('TABLES')[$table]['pk'] => $rowId], null, $depth);
+        $rows = Moedoo::select($table, ['RowID' => $rowId], null, $depth);
 
         // currently we're only supporting single row insert
         if (count($rows) === 1) {
-          $rows = Moedoo::referenceFk($table, $rows, $depth);
+          $rows = Moedoo::referenceFK($table, $rows, $depth);
           return $rows[0];
         } else {
           throw new Exception('error processing query', 1);
         }
       } catch (Exception $e) {
-        throw new Exception($e -> getMessage(), 1);
+        throw new Exception($e->getMessage(), 1);
       }
     }
+
 
 
     /**
@@ -673,7 +807,7 @@
       $columns = Moedoo::buildReturn($table);
 
       foreach ($data as $column => $value) {
-        array_push($set, $column."=\${$count}");
+        array_push($set, $column." = :$count");
         array_push($params, $value);
         $count++;
       }
@@ -681,26 +815,25 @@
       $set = implode(', ', $set);
       array_push($params, $id);
 
-      $query = "UPDATE {$table} SET {$set} WHERE ". Config::get('TABLES')[$table]['pk'] ."=\${$count};";
+      $query = "UPDATE $table SET $set WHERE ". Config::get('TABLES')[$table]['pk'] ." = :$count;";
       try {
         $changeCount = Moedoo::executeQuery($table, $query, $params);
 
-        // currently we're only supporting single row update
         if ($changeCount === 1) {
+          //-> currently we're only supporting single row update
           // RETURNING
           $rows = Moedoo::select($table, [Config::get('TABLES')[$table]['pk'] => $id], null, $depth);
-          $rows = Moedoo::referenceFk($table, $rows, $depth);
+          $rows = Moedoo::referenceFK($table, $rows, $depth);
           return $rows[0];
-        }
-
-        // no row was affected, returns the data back...
-        else {
-          throw new Exception("`{$table}` entry with id `{$id}` does not exist", 1);
+        } else {
+          //-> no row was affected, returns the data back...
+          throw new Exception("`$table` entry with id `$id` does not exist", 1);
         }
       } catch (Exception $e) {
         throw new Exception($e->getMessage(), 1);
       }
     }
+
 
 
     /**
@@ -722,18 +855,18 @@
       $rows = Moedoo::select($table, [Config::get('TABLES')[$table]['pk'] => $id], null, $depth);
 
       if (count($rows) === 0) {
-        throw new Exception("`{$table}` with resource id `{$id}` does not exist", 1);
+        throw new Exception("`$table` with resource id `$id` does not exist", 1);
       } else {
-        $query = "DELETE FROM {$table} WHERE ". Config::get('TABLES')[$table]['pk'] ."=$1;";
+        $query = "DELETE FROM $table WHERE ". Config::get('TABLES')[$table]['pk'] .'= :1;';
 
         try {
           $changeCount = Moedoo::executeQuery($table, $query, $params);
 
-          // currently we're only supporting single row deletion
           if ($changeCount === 1) {
+            //-> currently we're only supporting single row deletion
             return $rows[0];
           } else {
-            throw new Exception("`{$table}` with resource id `{$id}` does not exist", 1);
+            throw new Exception("`$table` with resource id `$id` does not exist", 1);
           }
         } catch (Exception $e) {
           throw new Exception($e->getMessage(), 1);

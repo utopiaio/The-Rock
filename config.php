@@ -21,6 +21,7 @@
        */
       'ROOT_URL' => '',
 
+      // encryption
       'HASH' => 'sha512',
       'SALT' => 'canYouSmellWhatTheRockIsCooking',
 
@@ -40,11 +41,10 @@
 
       // SQLite
       'DB_FILE' => __DIR__ . '/db/rock.sqlite',
+      'DB_ID_LENGTH' => 8, // 62^8, which is aboot 210 Trillion
       'DB_BUSY_TIMEOUT' => 30000, // 30 seconds
       'DEFAULT_DEPTH' => 1,
-
-      // reference key (to be used for reverse referencing)
-      'REFERENCE_KEY' => 'reference',
+      'RELATIONSHIP_KEY' => 'relationships',
 
       // CORS
       'CORS_WHITE_LIST' => ['*', 'rock.io', 'foo.com'],
