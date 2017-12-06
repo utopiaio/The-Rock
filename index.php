@@ -31,11 +31,11 @@
 
     $r->addRoute('OPTIONS', Config::get('ROOT_URL').'/[{path:.+}]', 'OPTIONS');
 
-    $r->addRoute('GET', Config::get('ROOT_URL').'/{table}[/{id:\d+}]', 'REST');
+    $r->addRoute('GET', Config::get('ROOT_URL').'/{table}[/{id:[A-Za-z0-9]{'. Config::get('DB_ID_LENGTH') .'}}]', 'REST');
     $r->addRoute('GET', Config::get('ROOT_URL').'/{table}/{count:count}', 'REST');
     $r->addRoute('POST', Config::get('ROOT_URL').'/{table}', 'REST');
-    $r->addRoute('PATCH', Config::get('ROOT_URL').'/{table}/{id:\d+}', 'REST');
-    $r->addRoute('DELETE', Config::get('ROOT_URL').'/{table}/{id:\d+}', 'REST');
+    $r->addRoute('PATCH', Config::get('ROOT_URL').'/{table}/{id:[A-Za-z0-9]{'. Config::get('DB_ID_LENGTH') .'}}', 'REST');
+    $r->addRoute('DELETE', Config::get('ROOT_URL').'/{table}/{id:[A-Za-z0-9]{'. Config::get('DB_ID_LENGTH') .'}}', 'REST');
   });
 
   $routeInfo = $dispatcher->dispatch($_SERVER['REQUEST_METHOD'], array_key_exists('REDIRECT_URL', $_SERVER) === true ? $_SERVER['REDIRECT_URL'] : '/');
