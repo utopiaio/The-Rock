@@ -75,9 +75,7 @@
           'columns'   => ['id', 'col_integer', 'col_float', 'col_json', 'col_bool', 'col_string', 'col_fk', 'col_fk_m'],
           'returning' => ['id', 'col_integer', 'col_float', 'col_json', 'col_bool', 'col_string', 'col_fk', 'col_fk_m'],
           'bool'      => ['col_bool'],
-          'int'       => ['id', 'col_integer', 'col_fk'],
-          '[int]'     => ['col_fk_m'],
-          'float'     => ['col_float'],
+          '[string]'  => ['col_fk_m'],
           'JSON'      => ['col_json'],
           'search'    => ['col_string'],
           'fk'        => [
@@ -89,13 +87,11 @@
           'pk'        => 'id',
           'columns'   => ['id', 'name', 'size', 'type'],
           'returning' => ['id', 'name', 'size', 'type'],
-          'int'       => ['id', 'size']
         ],
         'tag'         => [
           'pk'        => 'id',
           'columns'   => ['id', 'tag'],
           'returning' => ['id', 'tag'],
-          'int'       => ['id'],
           'search'    => ['tag'],
           'fk'        => [
             '{rock}'  => ['table' => 'rock', 'referenced_by' => 'id', 'referencing_column' => 'col_fk_m']
@@ -105,7 +101,6 @@
           'pk'        => 'user_id',
           'columns'   => ['user_id', 'user_full_name', 'user_username', 'user_password', 'user_status', 'user_group'],
           'returning' => ['user_id', 'user_full_name', 'user_username', 'user_status', 'user_group'],
-          'int'       => ['user_id', 'user_group'],
           'bool'      => ['user_status'],
           'search'    => ['user_full_name', 'user_username'],
           'fk'        => [
@@ -117,30 +112,29 @@
           'columns'   => [
             'user_group_id',
             'user_group_name',
-            'user_group_has_permission_create_rock', 'user_group_has_permission_read_rock', 'user_group_has_permission_update_rock', 'user_group_has_permission_delete_rock',
-            'user_group_has_permission_create_tag', 'user_group_has_permission_read_tag', 'user_group_has_permission_update_tag', 'user_group_has_permission_delete_tag',
-            'user_group_has_permission_create_s3', 'user_group_has_permission_read_s3', 'user_group_has_permission_update_s3', 'user_group_has_permission_delete_s3',
-            'user_group_has_permission_create_user', 'user_group_has_permission_read_user', 'user_group_has_permission_update_user', 'user_group_has_permission_delete_user',
-            'user_group_has_permission_create_user_group', 'user_group_has_permission_read_user_group', 'user_group_has_permission_update_user_group', 'user_group_has_permission_delete_user_group',
+            'user_group_create_rock', 'user_group_read_rock', 'user_group_update_rock', 'user_group_delete_rock',
+            'user_group_create_tag', 'user_group_read_tag', 'user_group_update_tag', 'user_group_delete_tag',
+            'user_group_create_s3', 'user_group_read_s3', 'user_group_update_s3', 'user_group_delete_s3',
+            'user_group_create_user', 'user_group_read_user', 'user_group_update_user', 'user_group_delete_user',
+            'user_group_create_user_group', 'user_group_read_user_group', 'user_group_update_user_group', 'user_group_delete_user_group',
             'user_group_status'
           ],
           'returning' => [
             'user_group_id',
             'user_group_name',
-            'user_group_has_permission_create_rock', 'user_group_has_permission_read_rock', 'user_group_has_permission_update_rock', 'user_group_has_permission_delete_rock',
-            'user_group_has_permission_create_tag', 'user_group_has_permission_read_tag', 'user_group_has_permission_update_tag', 'user_group_has_permission_delete_tag',
-            'user_group_has_permission_create_s3', 'user_group_has_permission_read_s3', 'user_group_has_permission_update_s3', 'user_group_has_permission_delete_s3',
-            'user_group_has_permission_create_user', 'user_group_has_permission_read_user', 'user_group_has_permission_update_user', 'user_group_has_permission_delete_user',
-            'user_group_has_permission_create_user_group', 'user_group_has_permission_read_user_group', 'user_group_has_permission_update_user_group', 'user_group_has_permission_delete_user_group',
+            'user_group_create_rock', 'user_group_read_rock', 'user_group_update_rock', 'user_group_delete_rock',
+            'user_group_create_tag', 'user_group_read_tag', 'user_group_update_tag', 'user_group_delete_tag',
+            'user_group_create_s3', 'user_group_read_s3', 'user_group_update_s3', 'user_group_delete_s3',
+            'user_group_create_user', 'user_group_read_user', 'user_group_update_user', 'user_group_delete_user',
+            'user_group_create_user_group', 'user_group_read_user_group', 'user_group_update_user_group', 'user_group_delete_user_group',
             'user_group_status'
           ],
-          'int'       => ['user_group_id'],
           'bool'      => [
-            'user_group_has_permission_create_rock', 'user_group_has_permission_read_rock', 'user_group_has_permission_update_rock', 'user_group_has_permission_delete_rock',
-            'user_group_has_permission_create_tag', 'user_group_has_permission_read_tag', 'user_group_has_permission_update_tag', 'user_group_has_permission_delete_tag',
-            'user_group_has_permission_create_s3', 'user_group_has_permission_read_s3', 'user_group_has_permission_update_s3', 'user_group_has_permission_delete_s3',
-            'user_group_has_permission_create_user', 'user_group_has_permission_read_user', 'user_group_has_permission_update_user', 'user_group_has_permission_delete_user',
-            'user_group_has_permission_create_user_group', 'user_group_has_permission_read_user_group', 'user_group_has_permission_update_user_group', 'user_group_has_permission_delete_user_group',
+            'user_group_create_rock', 'user_group_read_rock', 'user_group_update_rock', 'user_group_delete_rock',
+            'user_group_create_tag', 'user_group_read_tag', 'user_group_update_tag', 'user_group_delete_tag',
+            'user_group_create_s3', 'user_group_read_s3', 'user_group_update_s3', 'user_group_delete_s3',
+            'user_group_create_user', 'user_group_read_user', 'user_group_update_user', 'user_group_delete_user',
+            'user_group_create_user_group', 'user_group_read_user_group', 'user_group_update_user_group', 'user_group_delete_user_group',
             'user_group_status'],
           'search'    => ['user_group_name'],
           'fk'        => [
