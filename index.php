@@ -38,19 +38,19 @@
     $r->addRoute('DELETE', Config::get('ROOT_URL').'/{table}/{id:[A-Za-z0-9]{'. Config::get('DB_ID_LENGTH') .'}}', 'REST');
   });
 
-  $routeInfo = $dispatcher->dispatch($_SERVER['REQUEST_METHOD'], array_key_exists('REDIRECT_URL', $_SERVER) === true ? $_SERVER['REDIRECT_URL'] : '/');
+  $routeInfo = $dispatcher->dispatch($_SERVER['REQUEST_METHOD'], array_key_exists('REQUEST_URI', $_SERVER) === true ? $_SERVER['REQUEST_URI'] : '/');
 
-  if (array_key_exists('REDIRECT_URL', $_SERVER) === false) {
-    $_SERVER['REDIRECT_URL'] = '/';
+  if (array_key_exists('REQUEST_URI', $_SERVER) === false) {
+    $_SERVER['REQUEST_URI'] = '/';
   }
 
   switch ($routeInfo[0]) {
     case FastRoute\Dispatcher::NOT_FOUND:
-      Rock::halt(404, '`'.  $_SERVER["REQUEST_METHOD"] .'` method with URL `'. $_SERVER['REDIRECT_URL'] .'` not found');
+      Rock::halt(404, '`'.  $_SERVER["REQUEST_METHOD"] .'` method with URL `'. $_SERVER['REQUEST_URI'] .'` not found');
       break;
 
     case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-      Rock::halt(405, '`'.  $_SERVER['REQUEST_METHOD'] .'` method with URL `'. $_SERVER['REDIRECT_URL'] .'` not allowed');
+      Rock::halt(405, '`'.  $_SERVER['REQUEST_METHOD'] .'` method with URL `'. $_SERVER['REQUEST_URI'] .'` not allowed');
       break;
 
     case FastRoute\Dispatcher::FOUND:
