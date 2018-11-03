@@ -68,7 +68,7 @@ There you have it, `The Rock` should be running. You can get a pretty good under
 ### Authentication
 The Rock provides stateless, tailored authentication (see `user_group` table for more details). It uses JWT for authentication.
 
-Using [Httpie](https://github.com/jkbrzt/httpie) `$ http POST http://PathToRock/auth username=utopiaio password=utopiaio`
+Using [Httpie](https://github.com/jkbrzt/httpie) `$ http POST http://PathToRock/auth username=utopiaio password=rada`
 
 ### License
 MIT

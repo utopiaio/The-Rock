@@ -54,7 +54,7 @@
 
       // requests that require authentication + tailored permission
       'AUTH_REQUESTS' => [
-        'GET'     => [],
+        'GET'     => ['user'],
         'POST'    => [],
         'PATCH'   => [],
         'DELETE'  => []
