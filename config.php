@@ -2,7 +2,7 @@
   /**
    * The Rock - a micro "framework" with a budget
    *
-   * @author    Utopia፲ <utopiaio@yahoo.com>
+   * @author    Eyassu <utopiaio@yahoo.com>
    * @version   1.0.0
    */
 
